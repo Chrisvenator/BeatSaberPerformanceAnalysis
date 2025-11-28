@@ -119,6 +119,7 @@ def get_scores_for(player_id):
     player_scores_file_location = "./scores/" + str(player_id) + "/"
     os.makedirs(player_scores_file_location, exist_ok=True)
 
+    print("Getting scores from ScoreSaber...")
     save_all_scores_for_user(player_id, player_scores_file_location)
     merge_all_scores_for_user(player_id, player_scores_file_location)
 
