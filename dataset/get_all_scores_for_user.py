@@ -3,7 +3,31 @@ import traceback
 
 import requests
 import re, json
-from ftfy import fix_text
+import config
+
+def write_error(msg):
+    os.makedirs("./.error", exist_ok=True)
+    with open("./.error/latest.json", "w") as f:
+        f.write(str(msg))
+    exit(1)
+
+
+def load_player_scores(page=""):
+    ## To load all scores, use "". To load 10 maps, use "-1" or "-2", ... "-n" based on the user scores pages.
+    player_scores_file_location = config.player_scores_file_location + str(config.player_id) + page + ".json"
+
+    # idk why, but when running this script directly, I need /dataset in front. But when running from main, I only need /scores...
+    if not os.path.exists(player_scores_file_location):
+        player_scores_file_location = "./dataset/scores/" + str(config.player_id) + "/" + str(config.player_id) + page + ".json"
+        map_info_file_location = "./dataset/map_infos/"
+
+        if not os.path.exists(player_scores_file_location):
+            raise ValueError("Path to file does not exist! Please get all user scores beforehand.")
+
+    with open(player_scores_file_location, "r") as f:
+        print("loaded " + f.name)
+        f = json.load(f)
+        return f
 
 
 def fix_known_mojibake(s):
@@ -56,10 +80,7 @@ def clean_json(resp):
         print(traceback.format_exc())
 
         # Create a new directory and write the faulty code there. Helps with debugging
-        os.makedirs("./.error", exist_ok=True)
-        with open("./.error/latest.json", "w") as f:
-            f.write(str(resp))
-        exit(1)
+        write_error(resp)
     return resp
 
 
@@ -76,52 +97,50 @@ def make_request(baseURL, playerID, limit, sortBy, page):
         return None
 
 
-def save_all_scores_for_user(player_id, player_scores_file_location):
-    base_url = "https://scoresaber.com/api/player"
+def save_all_scores_for_user():
     limit = 10
     sort_by = "recent"
     page = 1
 
     successful_last_request = True
     while successful_last_request:
-        req = make_request(base_url, player_id, limit, sort_by, page)
+        req = make_request(config.score_saber_base_url, config.player_id, limit, sort_by, page)
         if req is None:
             successful_last_request = False
             print("Reached end of scores at page: " + str(page))
         else:
-            with open(player_scores_file_location + str(player_id) + "-" + str(page) + ".json", "w") as f:
+            with open(config.player_scores_file_location + str(config.player_id) + "-" + str(page) + ".json", "w") as f:
                 f.write(str(req))
             page += 1
         # break
 
 
-def read_file(player_id, player_scores_file_location, page):
-    with open(player_scores_file_location + str(player_id) + "-" + str(page) + ".json", "r") as f:
+def read_file(page):
+    with open(config.player_scores_file_location + str(config.player_id) + "-" + str(page) + ".json", "r") as f:
         print(f.name)
         f = json.load(f)
         return f
 
 
-def merge_all_scores_for_user(player_id, player_scores_file_location):
-    all_scores = read_file(player_id, player_scores_file_location, 1)
+def merge_all_scores_for_user():
+    all_scores = read_file(1)
     page = 2
-    while os.path.exists(player_scores_file_location + str(player_id) + "-" + str(page) + ".json"):
-        file = read_file(player_id, player_scores_file_location, page)
+    while os.path.exists(config.player_scores_file_location + str(config.player_id) + "-" + str(page) + ".json"):
+        file = read_file(page)
         all_scores = all_scores + file
         page += 1
 
-    with open(player_scores_file_location + str(player_id) + ".json", "w") as f:
+    with open(config.player_scores_file_location + str(config.player_id) + ".json", "w") as f:
         f.write(json.dumps(all_scores, indent=2))
     return all_scores
 
 
-def get_scores_for(player_id):
-    player_scores_file_location = "./scores/" + str(player_id) + "/"
-    os.makedirs(player_scores_file_location, exist_ok=True)
+def get_scores_for_player_id():
+    os.makedirs(config.player_scores_file_location, exist_ok=True)
 
     print("Getting scores from ScoreSaber...")
-    save_all_scores_for_user(player_id, player_scores_file_location)
-    merge_all_scores_for_user(player_id, player_scores_file_location)
+    save_all_scores_for_user()
+    merge_all_scores_for_user()
 
 if __name__ == "__main__":
-    get_scores_for(76561198274713084)
+    get_scores_for_player_id()
