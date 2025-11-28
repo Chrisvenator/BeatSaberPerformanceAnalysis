@@ -6,9 +6,10 @@ from dataset.config import csv_file_path
 from dataset.get_all_scores_for_user import load_player_scores, write_error
 
 
-def load_map_info(map_hash):
+def load_map_info(map_hash, verbose=True):
     with open(config.map_info_file_location + map_hash.upper() + ".json", "r") as f:
-        print("loaded " + f.name)
+        if verbose:
+            print("loaded " + f.name)
         f = json.load(f)
         return f
 
@@ -43,6 +44,12 @@ def create_csv():
     for score in scores:
         i+=1
         print("Iteration: " + str(i))
+        try:
+            map_info = load_map_info(score["leaderboard"]["songHash"], False)
+        except:
+            print("Did not find Map " + score["leaderboard"]["songHash"] + ". Skipping...")
+            continue
+
         score_values = [score["score"].get(k) for k in score_keys]
         leaderboard_values = [score["leaderboard"].get(k) for k in leaderboard_keys]
         difficulty_values = [score["leaderboard"]["difficulty"].get(k) for k in difficulty_keys]
@@ -52,7 +59,15 @@ def create_csv():
             map_info["diffs"][i]
             for i in range(len(map_info["diffs"]))
             if (
-                    map_info["diffs"][i]["difficulty"] in score["leaderboard"]["difficulty"]["difficultyRaw"]
+                    ("_" + map_info["diffs"][i]["difficulty"] + "_") in score["leaderboard"]["difficulty"]["difficultyRaw"]
+                    and map_info["diffs"][i]["characteristic"] in score["leaderboard"]["difficulty"]["difficultyRaw"]
+            )
+        ]
+        diffs_2 = [
+            map_info["diffs"][i]
+            for i in range(len(map_info["diffs"]))
+            if (
+                    (map_info["diffs"][i]["difficulty"]) in score["leaderboard"]["difficulty"]["difficultyRaw"]
                     and map_info["diffs"][i]["characteristic"] in score["leaderboard"]["difficulty"]["difficultyRaw"]
             )
         ]
