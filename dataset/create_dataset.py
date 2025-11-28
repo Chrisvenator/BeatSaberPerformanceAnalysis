@@ -19,10 +19,10 @@ def create_csv():
     scores = load_player_scores("")[0]
     map_info = load_map_info(scores["leaderboard"]["songHash"])
 
-    score_keys = ([key for key in scores["score"]])  # score
-    leaderboard_keys = ([key for key in scores["leaderboard"]])  # leaderboard
+    score_keys = [key for key in scores["score"]]  # score
+    leaderboard_keys = [key for key in scores["leaderboard"]]  # leaderboard
     leaderboard_keys.remove("difficulty")
-    difficulty_keys = ([key for key in scores["leaderboard"]["difficulty"]])  # difficulty
+    difficulty_keys = [key for key in scores["leaderboard"]["difficulty"]]  # difficulty
 
     map_info_keys = [key for key in map_info]
     map_info_keys.remove("diffs")
@@ -36,13 +36,14 @@ def create_csv():
         difficulty_keys +
         map_info_keys +
         diffs_keys +
-        parity_summary_keys
+        parity_summary_keys +
+        ["weighted_pp"] # add header row + extra column for weighted pp
     )
 
     scores = load_player_scores("")
     i = 0
     for score in scores:
-        i+=1
+        i += 1
         print("Iteration: " + str(i))
         try:
             map_info = load_map_info(score["leaderboard"]["songHash"], False)
@@ -63,20 +64,18 @@ def create_csv():
                     and map_info["diffs"][i]["characteristic"] in score["leaderboard"]["difficulty"]["difficultyRaw"]
             )
         ]
-        diffs_2 = [
-            map_info["diffs"][i]
-            for i in range(len(map_info["diffs"]))
-            if (
-                    (map_info["diffs"][i]["difficulty"]) in score["leaderboard"]["difficulty"]["difficultyRaw"]
-                    and map_info["diffs"][i]["characteristic"] in score["leaderboard"]["difficulty"]["difficultyRaw"]
-            )
-        ]
         if len(diffs) != 1:
-            write_error(diffs)
-            exit(10)
+            print("WARNING! There was something wrong! There are multiple diffs with the same name(?). Skipping...")
+            continue
+
         diffs = diffs[0]
         diffs_values = [diffs.get(k) for k in diffs_keys]
-        parity_summary_values = [diffs["paritySummary"].get(k) for k in  parity_summary_keys]
+        parity_summary_values = [diffs["paritySummary"].get(k) for k in parity_summary_keys]
+
+        # compute weighted pp = pp + weight
+        pp = score["score"].get("pp") or 0
+        weight = score["score"].get("weight") or 0
+        weighted_pp = pp * weight
 
         data.append(
             score_values +
@@ -84,13 +83,13 @@ def create_csv():
             difficulty_values +
             map_info_values +
             diffs_values +
-            parity_summary_values
+            parity_summary_values +
+            [weighted_pp]
         )
 
     with open(csv_file_path, mode='w', newline='') as f:
         writer = csv.writer(f)
         writer.writerows(data)
-
 
 
 def create_dataset():
