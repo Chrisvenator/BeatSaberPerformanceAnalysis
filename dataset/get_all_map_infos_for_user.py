@@ -24,6 +24,7 @@ def extract_map_hashes(scores):
 
 def get_and_save_maps_from_beatsaver_by_hashes(url, map_hashes, map_info_file_location):
     maps = []
+    missing = 0
     print(map_hashes)
     for map_hash in map_hashes:
         response = requests.get(url + map_hash)
@@ -31,10 +32,17 @@ def get_and_save_maps_from_beatsaver_by_hashes(url, map_hashes, map_info_file_lo
             if not response.json():
                 return None
             else:
-                id = str(response.json()["id"])
-                save_map_info(clean_json(str(response.json())), id, map_info_file_location)
-                maps.append(response.json()["id"])
-                
+                found_hash = False
+                for version in response.json()["versions"]:
+                    if version["hash"].upper() == map_hash.upper():
+                        save_map_info(clean_json(str(version)), map_hash, map_info_file_location)
+                        found_hash = True
+
+                if not found_hash:
+                    print("Could not find hash \"" + map_hash.upper() + "\" in " + response.json()["id"])
+                    save_map_info(clean_json(str(response.json())), response.json()["id"], map_info_file_location + "/missing")
+                    missing += 1
+    print("Maps with a wrong hash: " + str(missing))
     return maps
 
 
@@ -52,8 +60,13 @@ def get_maps_for_player_id(player_id):
     player_scores_file_location = "./scores/" + str(player_id) + "/" + str(player_id) + page + ".json"
     map_info_file_location = "./map_infos/"
 
+    # idk why, but when running this script directly, I need /dataset in front. But when running from main, I only need /scores...
     if not os.path.exists(player_scores_file_location):
-        raise ValueError("Path to file does not exist! Please get all user scores beforehand.")
+        player_scores_file_location = "./dataset/scores/" + str(player_id) + "/" + str(player_id) + page + ".json"
+        map_info_file_location = "./dataset/map_infos/"
+
+        if not os.path.exists(player_scores_file_location):
+            raise ValueError("Path to file does not exist! Please get all user scores beforehand.")
 
     os.makedirs(map_info_file_location, exist_ok=True)
 
