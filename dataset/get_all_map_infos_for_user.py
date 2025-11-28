@@ -21,6 +21,12 @@ def get_and_save_maps_from_beatsaver_by_hashes(url, map_hashes, map_info_file_lo
     missing = 0
     print(map_hashes)
     for map_hash in map_hashes:
+
+        file_path = os.path.join(map_info_file_location, map_hash + ".json")
+        if os.path.exists(file_path):
+            print("Already have " + map_hash + ", skipping download...")
+            continue
+
         response = requests.get(url + map_hash)
         if response.status_code == 200:
             if not response.json():
