@@ -58,7 +58,8 @@ def create_dataset():
         map_info_keys +
         diffs_keys +
         parity_summary_keys +
-        ["weighted_pp"] # add header row + extra column for weighted pp
+        ["weighted_pp"] + # add header row + extra column for weighted pp
+        ["accuracy"]
     )
 
     scores = load_player_scores("")
@@ -98,6 +99,10 @@ def create_dataset():
         weight = score["score"].get("weight") or 0
         weighted_pp = pp * weight
 
+        base_score = score["score"].get("baseScore") or 0
+        max_score = score["leaderboard"].get("maxScore") or 1
+        accuracy = base_score / max_score
+
         data.append(
             score_values +
             leaderboard_values +
@@ -105,7 +110,8 @@ def create_dataset():
             map_info_values +
             diffs_values +
             parity_summary_values +
-            [weighted_pp]
+            [weighted_pp] +
+            [accuracy]
         )
 
     with open(csv_file_path, mode='w', newline='') as f:
