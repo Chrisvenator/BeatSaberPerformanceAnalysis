@@ -14,20 +14,41 @@ def load_map_info(map_hash, verbose=True):
         return f
 
 
-def create_csv():
+def create_dataset():
     data = []
     scores = load_player_scores("")[0]
     map_info = load_map_info(scores["leaderboard"]["songHash"])
 
     score_keys = [key for key in scores["score"]]  # score
+    score_keys.remove("leaderboardPlayerInfo")
+    score_keys.remove("hmd")
+    score_keys.remove("hasReplay")
+    score_keys.remove("deviceControllerLeft")
+    score_keys.remove("deviceControllerRight")
+    score_keys.remove("id")
+    score_keys.remove("deviceHmd")
     leaderboard_keys = [key for key in scores["leaderboard"]]  # leaderboard
     leaderboard_keys.remove("difficulty")
+    leaderboard_keys.remove("difficulties")
+    leaderboard_keys.remove("songHash")
+    leaderboard_keys.remove("dailyPlays")
+    leaderboard_keys.remove("playerScore")
     difficulty_keys = [key for key in scores["leaderboard"]["difficulty"]]  # difficulty
+    difficulty_keys.remove("leaderboardId")
+    difficulty_keys.remove("difficulty")
+    difficulty_keys.remove("gameMode")
+    difficulty_keys.remove("difficultyRaw")
 
     map_info_keys = [key for key in map_info]
     map_info_keys.remove("diffs")
+    map_info_keys.remove("state")
+    map_info_keys.remove("downloadURL")
+    map_info_keys.remove("coverURL")
+    map_info_keys.remove("previewURL")
     diffs_keys = [key for key in map_info["diffs"][0]]
     diffs_keys.remove("paritySummary")
+    diffs_keys.remove("environment")
+    diffs_keys.remove("difficulty")
     parity_summary_keys = [key for key in map_info["diffs"][0]["paritySummary"]]
 
     data.append(
@@ -90,10 +111,6 @@ def create_csv():
     with open(csv_file_path, mode='w', newline='') as f:
         writer = csv.writer(f)
         writer.writerows(data)
-
-
-def create_dataset():
-    create_csv()
 
 
 if __name__ == "__main__":
