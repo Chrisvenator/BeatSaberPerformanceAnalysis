@@ -1,9 +1,12 @@
 import csv
 import json
 
+import pandas as pd
+
 import config
 from dataset.config import csv_file_path
 from dataset.get_all_scores_for_user import load_player_scores, write_error
+from dataset.load_dataset import load_dataset
 
 
 def load_map_info(map_hash, verbose=True):
@@ -28,11 +31,14 @@ def create_dataset():
     score_keys.remove("id")
     score_keys.remove("deviceHmd")
     leaderboard_keys = [key for key in scores["leaderboard"]]  # leaderboard
+    leaderboard_keys.remove("createdDate")
+    leaderboard_keys.remove("lovedDate")
     leaderboard_keys.remove("difficulty")
     leaderboard_keys.remove("difficulties")
     leaderboard_keys.remove("songHash")
     leaderboard_keys.remove("dailyPlays")
     leaderboard_keys.remove("playerScore")
+    leaderboard_keys.remove("id")
     difficulty_keys = [key for key in scores["leaderboard"]["difficulty"]]  # difficulty
     difficulty_keys.remove("leaderboardId")
     difficulty_keys.remove("difficulty")
@@ -45,6 +51,17 @@ def create_dataset():
     map_info_keys.remove("downloadURL")
     map_info_keys.remove("coverURL")
     map_info_keys.remove("previewURL")
+    map_info_keys.remove("id")
+    map_info_keys.remove("name")
+    map_info_keys.remove("metadata")
+    map_info_keys.remove("plays")
+    map_info_keys.remove("downloads")
+    map_info_keys.remove("uploaded")
+    map_info_keys.remove("updatedAt")
+    map_info_keys.remove("lastPublishedAt")
+    map_info_keys.remove("description")
+    map_info_keys.remove("uploader")
+
     diffs_keys = [key for key in map_info["diffs"][0]]
     diffs_keys.remove("paritySummary")
     diffs_keys.remove("environment")
@@ -58,8 +75,10 @@ def create_dataset():
         map_info_keys +
         diffs_keys +
         parity_summary_keys +
-        ["weighted_pp"] + # add header row + extra column for weighted pp
-        ["accuracy"]
+        ["weighted_pp"] +  # add header row + extra column for weighted pp
+        ["accuracy"] +
+        ["tags"] +
+        ["beatsaver_id"]
     )
 
     scores = load_player_scores("")
@@ -103,6 +122,10 @@ def create_dataset():
         max_score = score["leaderboard"].get("maxScore") or 1
         accuracy = base_score / max_score
 
+        tags = map_info.get("tags") or ""
+
+        beatsaver_id = map_info.get("id")
+
         data.append(
             score_values +
             leaderboard_values +
@@ -111,12 +134,20 @@ def create_dataset():
             diffs_values +
             parity_summary_values +
             [weighted_pp] +
-            [accuracy]
+            [accuracy] +
+            [tags] +
+            [beatsaver_id]
         )
 
     with open(csv_file_path, mode='w', newline='') as f:
         writer = csv.writer(f)
         writer.writerows(data)
+
+    print("Successfully created and saved Dataset.")
+    df = pd.read_csv(csv_file_path)
+    print("Stats:")
+    print(df.dtypes)
+    print(df.shape)
 
 
 if __name__ == "__main__":
