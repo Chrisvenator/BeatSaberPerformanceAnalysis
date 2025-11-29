@@ -92,7 +92,13 @@ def make_request(baseURL, playerID, limit, sortBy, page):
         if not response.json()["playerScores"]:
             return None
         else:
-            return clean_json(str(response.json()["playerScores"]))
+            req = str(response.json()["playerScores"])
+            # Save raw data for a Data Quality analysis
+            if config.save_raws:
+                with open(config.raw_data_file_location + str(config.player_id) + "-" + str(page) + ".json", "w") as f:
+                    f.write(str(req))
+
+            return clean_json(req)
     else:
         return None
 

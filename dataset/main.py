@@ -6,8 +6,8 @@ from dataset.get_all_scores_for_user import get_scores_for_player_id
 
 
 def __main__():
-    # get_scores_for_player_id()
-    # get_maps_for_player_id()
+    get_scores_for_player_id()
+    get_maps_for_player_id()
     create_dataset()
 
 

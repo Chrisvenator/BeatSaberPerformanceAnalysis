@@ -19,13 +19,13 @@ def extract_map_hashes(scores):
 def get_and_save_maps_from_beatsaver_by_hashes(url, map_hashes, map_info_file_location):
     maps = []
     missing = 0
-    print(map_hashes)
+
     for map_hash in map_hashes:
 
-        file_path = os.path.join(map_info_file_location, map_hash + ".json")
-        if os.path.exists(file_path):
-            print("Already have " + map_hash + ", skipping download...")
-            continue
+        # file_path = os.path.join(map_info_file_location, map_hash + ".json")
+        # if os.path.exists(file_path):
+        #     print("Already have " + map_hash + ", skipping download...")
+        #     continue
 
         response = requests.get(url + map_hash)
         if response.status_code == 200:
@@ -37,6 +37,9 @@ def get_and_save_maps_from_beatsaver_by_hashes(url, map_hashes, map_info_file_lo
                     if version["hash"].upper() == map_hash.upper():
                         save_map_info(clean_json(str(version)), map_hash, map_info_file_location)
                         found_hash = True
+                        # Save a duplicate of the raw data for further data quality analysis
+                        if config.save_raws:
+                            save_map_info(str(version), map_hash, config.raw_data_file_location)
 
                 if not found_hash:
                     os.makedirs(map_info_file_location + "missing", exist_ok=True)
