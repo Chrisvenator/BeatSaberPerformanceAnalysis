@@ -47,7 +47,8 @@ def create_maps_acc_graph():
         c=df["weighted_pp"],
         cmap="plasma",
         s=10,
-        label="Map Score"
+        label="Map Score",
+        zorder=2
     )
 
     plt.title("Player Performance Across Beat Saber Map Difficulty")
@@ -64,8 +65,28 @@ def create_maps_acc_graph():
         poly(xs),
         linewidth=2,
         c="red",
-        label="Average accuracy"
+        label="Average accuracy",
+        zorder=3
     )
+
+    top20 = df.nlargest(20, "weighted_pp")
+    m20, b20 = np.polyfit(top20["stars"], top20["accuracy_pct"], 1)
+    y_top20 = m20 * xs + b20
+
+    mask = y_top20 < 100
+
+    xs_visible = xs[mask]
+    y_visible = y_top20[mask]
+
+    ax.plot(
+        xs_visible,
+        y_visible,
+        linewidth=2,
+        c="yellow",
+        label="Top 20 trend",
+        zorder=1,
+    )
+
     ax.legend()
 
     cbar = plt.colorbar(scatter, ax=ax)
