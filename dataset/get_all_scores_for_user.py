@@ -9,7 +9,6 @@ def write_error(msg):
     os.makedirs("./.error", exist_ok=True)
     with open("./.error/latest.json", "w") as f:
         f.write(str(msg))
-    exit(1)
 
 
 def load_player_scores(page=""):
@@ -76,12 +75,12 @@ def clean_json(resp):
     try:
         resp = json.loads(resp)
         resp = json.dumps(resp, indent=2)
+        return resp
     except Exception:
+        print("CAUGHT IN clean_json")
         print(traceback.format_exc())
-
-        # Create a new directory and write the faulty code there. Helps with debugging
-        write_error(resp)
-    return resp
+        write_error(resp) # Create a new directory and write the faulty code there. Helps with debugging
+        return ""
 
 
 def make_request(baseURL, playerID, limit, sortBy, page):
@@ -114,6 +113,8 @@ def save_all_scores_for_user():
         if req is None:
             successful_last_request = False
             print("Reached end of scores at page: " + str(page))
+        elif req == "":
+            continue
         else:
             with open(config.player_scores_file_location + str(config.player_id) + "-" + str(page) + ".json", "w") as f:
                 f.write(str(req))
