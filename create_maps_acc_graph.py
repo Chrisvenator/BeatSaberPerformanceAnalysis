@@ -90,7 +90,7 @@ def create_maps_acc_graph():
     ax.legend()
 
     cbar = plt.colorbar(scatter, ax=ax)
-    cbar.set_label("weighted performance points (pp)")
+    cbar.set_label("weighted performance points (pp)\nweighted_pp = raw_pp × 0.965^map_index")
 
     ax.tick_params(axis='x', labelrotation=30)
     ax.grid()
