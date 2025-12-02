@@ -37,6 +37,7 @@ def create_maps_acc_graph():
     for label, y0, y1, color in ranges_pct:
         ax.axhspan(y0, y1, color=color, alpha=0.25)
 
+
     df["accuracy_pct"] = df["accuracy"] * 100
     df["star_cat"] = df["stars"].astype("category")
     codes = df["star_cat"].cat.codes

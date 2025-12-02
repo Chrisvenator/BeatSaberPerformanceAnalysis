@@ -18,6 +18,7 @@ def load_dataset(ranked=False):
 
     if ranked:
         data = data[data["pp"] > 0]
+        data = data[data["modifiers"] != "NF"]
 
     data = data[data["accuracy"] < 200]
 
