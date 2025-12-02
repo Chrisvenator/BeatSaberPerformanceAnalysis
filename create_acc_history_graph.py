@@ -1,4 +1,3 @@
-
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import numpy as np
@@ -9,7 +8,7 @@ from dataset.load_dataset import load_dataset
 
 
 def create_maps_acc_graph():
-    df = load_dataset(False)
+    df = load_dataset(True)
     print(df.shape)
 
     x_values = np.arange(0, 13, 0.5)
@@ -30,89 +29,76 @@ def create_maps_acc_graph():
         ("E", 0.00, 0.20, "#470101"),
     ]
 
-
     min_acc = df["accuracy"].min()
     ranges = [r for r in ranges if r[2] >= min_acc]
 
-    # convert ranges to percent
     ranges_pct = [(label, y0 * 100, y1 * 100, color) for (label, y0, y1, color) in ranges]
 
-    # draw color bands
     for label, y0, y1, color in ranges_pct:
         ax.axhspan(y0, y1, color=color, alpha=0.25)
 
     df["accuracy_pct"] = df["accuracy"] * 100
+    df["star_cat"] = df["stars"].astype("category")
+    codes = df["star_cat"].cat.codes
 
-    df["map_tag_cat"] = df["map_tag"].astype("category")
-    codes = df["map_tag_cat"].cat.codes
-
-    # keep only rows where code != -1 (meaning valid tag)
     mask = codes != -1
     df = df[mask]
-    codes = codes[mask]  # keep codes aligned with df
+    codes = codes[mask]
 
     ax.scatter(
         df["timeSet"],
         df["accuracy_pct"],
         c=codes,
-        cmap="inferno",
+        cmap="inferno",   # stars color map
         s=10,
         zorder=2
     )
 
-    handles = []
-    labels = df["map_tag"].astype("category").cat.categories
-
-    for i, lab in enumerate(labels):
-        handles.append(plt.Line2D([], [], marker="o", linestyle="",
-                                  color=plt.cm.inferno(i / (len(labels) - 1))))
-    ax.legend(handles, labels, title="map_tag")
-
-
-    plt.title("Player Performance Across Beat Saber Map Genres over Time")
+    plt.title("Player Performance Across Beat Saber Map Difficulties over Time")
     plt.xlabel("Date Score set")
     plt.ylabel("Accuracy (%)")
 
-    # convert time to numeric
     df["t_sec"] = (df["timeSet"] - df["timeSet"].min()).dt.total_seconds()
+    df["star_int"] = df["stars"].round().astype(int)
 
-    # numeric time
-    df["t_sec"] = (df["timeSet"] - df["timeSet"].min()).dt.total_seconds()
+    cmap = plt.cm.inferno
 
-    # use the same colormap as the scatter
-    cmap = plt.cm.plasma
-    codes = df["map_tag_cat"].cat.codes
-    tags = df["map_tag_cat"].cat.categories
+    star_levels = [2, 4, 6, 8, 10, 12]
 
-    for code_val, tag in enumerate(tags):
-        sub = df[df["map_tag"] == tag]
+    star_min = df["stars"].min()
+    star_max = df["stars"].max()
+    star_range = max(star_max - star_min, 1e-6)  # avoid division by zero
 
-        if len(sub) < 5:
+    for star in star_levels:
+        sub = df[df["star_int"] == star].sort_values("t_sec")
+
+        if len(sub) < 6:
             continue
 
-        t = sub["t_sec"]
-        y = sub["accuracy_pct"]
+        t = sub["t_sec"].to_numpy()
+        y = sub["accuracy_pct"].to_numpy()
 
-        coef = np.polyfit(t, y, 6)
+        coef = np.polyfit(t, y, 6)  # 3 is usually stable enough
         poly = np.poly1d(coef)
 
         t_vals = np.linspace(t.min(), t.max(), 300)
         date_vals = df["timeSet"].min() + pd.to_timedelta(t_vals, unit="s")
 
+        color_val = (star - star_min) / star_range
+        color_val = max(0.0, min(1.0, color_val))  # clamp to [0, 1]
+
         ax.plot(
             date_vals,
             poly(t_vals),
             linewidth=2,
-            color=cmap(code_val / (len(tags) - 1)),
-            label=f"{tag} trend",
-            zorder=3
+            color=cmap(color_val),
+            label=f"{star}★ avg",
+            zorder=3,
         )
 
-    # zweite y-Achse für Ranks
     ax2 = ax.twinx()
     ax2.set_ylim(ax.get_ylim())  # gleiche Skala
 
-    # Ticks in die Mitte der Bereiche setzen
     tick_pos = [(y0 + y1) / 2 for (_, y0, y1, _) in ranges_pct]
     tick_labels = [label for (label, _, _, _) in ranges_pct]
 
@@ -129,7 +115,7 @@ def create_maps_acc_graph():
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
     plt.setp(ax.get_xticklabels(), rotation=30, ha="right")
 
-
+    ax.legend(title="Star curves (even)")
 
     plt.show()
 
