@@ -14,3 +14,5 @@ all scores are weighted down by their position in the descending raw_pp ranking 
 ![New_performance_points_gain_cutoff.png](New_performance_points_gain_cutoff.png)
 
 ## Interpretation graph 3:
+Across the entire timeline, my accuracy steadily rises at every difficulty level, showing that I’ve become more consistent on mid-tier maps and significantly stronger on high-end ones, with my best progress occurring during periods of higher play activity—overall, a clear long-term upward skill progression up until I had my wrist injury where my scores dropped slightly.
+![create_acc_history_graph_map_diff.png](create_acc_history_graph_map_diff.png)
