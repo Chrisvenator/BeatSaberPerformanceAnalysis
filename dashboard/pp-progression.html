@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PP Progression Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .viz-container {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background: #f7fafc;
+            border-radius: 12px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        select, input[type="range"] {
+            padding: 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .range-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #718096;
+            margin-top: 4px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 500px;
+            margin-bottom: 20px;
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            padding: 16px;
+            background: #f7fafc;
+            border-radius: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            z-index: 1000;
+        }
+
+        .loading-overlay.hidden {
+            display: none;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #e2e8f0;
+            border-top: 6px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 18px;
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            border: 2px solid #fc8181;
+            color: #742a2a;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .error-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .retry-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 12px;
+            transition: background 0.3s ease;
+        }
+
+        .retry-btn:hover {
+            background: #5568d3;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .view-btn {
+            padding: 10px 20px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #718096;
+            transition: all 0.3s ease;
+        }
+
+        .view-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .view-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="viz-container">
+        <h2 style="margin-bottom: 20px; color: #2d3748;">🎮 Performance Points Progression</h2>
+        
+        <div class="error-message" id="errorMessage">
+            <div class="error-title">❌ Error Loading Data</div>
+            <div id="errorText">Failed to load Beat Saber data. Please try again.</div>
+            <button class="retry-btn" onclick="loadData()">🔄 Retry</button>
+        </div>
+
+        <div class="view-toggle">
+            <button class="view-btn active" onclick="changeView('line')">Line Chart</button>
+            <button class="view-btn" onclick="changeView('scatter')">Scatter Plot</button>
+            <button class="view-btn" onclick="changeView('bubble')">Bubble Chart</button>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label>Difficulty Filter</label>
+                <select id="diffFilter" onchange="updateChart()">
+                    <option value="all">All Difficulties</option>
+                    <option value="Easy">Easy</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Hard">Hard</option>
+                    <option value="Expert">Expert</option>
+                    <option value="ExpertPlus">Expert+</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label>Minimum Stars: <span id="minStarValue">0</span>⭐</label>
+                <input type="range" id="minStar" min="0" max="20" value="0" step="0.5" oninput="updateStarRange()">
+            </div>
+
+            <div class="control-group">
+                <label>Maximum Stars: <span id="maxStarValue">20</span>⭐</label>
+                <input type="range" id="maxStar" min="0" max="20" value="20" step="0.5" oninput="updateStarRange()">
+            </div>
+
+            <div class="control-group">
+                <label>Minimum PP: <span id="minPPValue">0</span></label>
+                <input type="range" id="minPP" min="0" max="400" value="0" step="10" oninput="updatePPRange()">
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-value" id="totalPlays">0</div>
+                <div class="stat-label">Total Plays</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="maxPP">0</div>
+                <div class="stat-label">Max PP</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="avgAcc">0%</div>
+                <div class="stat-label">Avg Accuracy</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="avgStars">0⭐</div>
+                <div class="stat-label">Avg Stars</div>
+            </div>
+        </div>
+
+        <div class="chart-wrapper">
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="spinner"></div>
+                <div class="loading-text">Loading Beat Saber data...</div>
+            </div>
+            <canvas id="ppChart"></canvas>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #48bb78;"></div>
+                <span>0-5 Stars (Beginner)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #38b2ac;"></div>
+                <span>5-8 Stars (Intermediate)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4299e1;"></div>
+                <span>8-10 Stars (Advanced)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #9f7aea;"></div>
+                <span>10-12 Stars (Expert)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ed64a6;"></div>
+                <span>12-14 Stars (Master)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f56565;"></div>
+                <span>14+ Stars (Elite)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allScores = [];
+        let chart = null;
+        let currentView = 'line';
+
+        const diffColors = {
+            'Easy': '#3adb76',
+            'Normal': '#59b0f4',
+            'Hard': '#ff6347',
+            'Expert': '#bf2a42',
+            'ExpertPlus': '#8f48db'
+        };
+
+        function getStarColor(stars) {
+            if (stars < 5) return '#48bb78';
+            if (stars < 8) return '#38b2ac';
+            if (stars < 10) return '#4299e1';
+            if (stars < 12) return '#9f7aea';
+            if (stars < 14) return '#ed64a6';
+            return '#f56565';
+        }
+
+        async function loadData() {
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            
+            // Show loading, hide error
+            loadingOverlay.classList.remove('hidden');
+            errorMessage.classList.remove('show');
+            
+            try {
+                // Try different methods to fetch data
+                let data;
+                
+                // Method 1: Try direct fetch (some APIs allow CORS from file://)
+                try {
+                    console.log('Trying direct API call...');
+                    const response = await fetch('https://api.beatleader.com/player/76561198274713084/accgraph?leaderboardContext=general&type=acc&no_unranked_stars=true');
+                    data = await response.json();
+                    console.log('Direct API call successful!');
+                } catch (directError) {
+                    console.log('Direct API failed:', directError.message);
+                    
+                    // Method 2: Try corsproxy.io
+                    try {
+                        console.log('Trying corsproxy.io...');
+                        const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.beatleader.com/player/76561198274713084/accgraph?leaderboardContext=general&type=acc&no_unranked_stars=true'));
+                        data = await response.json();
+                        console.log('corsproxy.io successful!');
+                    } catch (corsproxyError) {
+                        console.log('corsproxy.io failed:', corsproxyError.message);
+                        
+                        // Method 3: Try allorigins with get endpoint (not raw)
+                        try {
+                            console.log('Trying allorigins get endpoint...');
+                            const apiUrl = 'https://api.beatleader.com/player/76561198274713084/accgraph?leaderboardContext=general&type=acc&no_unranked_stars=true';
+                            const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(apiUrl);
+                            const response = await fetch(proxyUrl);
+                            const proxyData = await response.json();
+                            data = JSON.parse(proxyData.contents);
+                            console.log('allorigins get endpoint successful!');
+                        } catch (aloriginsError) {
+                            console.log('allorigins get failed:', aloriginsError.message);
+                            
+                            // Method 4: Try cors-anywhere alternative
+                            try {
+                                console.log('Trying thingproxy...');
+                                const response = await fetch('https://thingproxy.freeboard.io/fetch/https://api.beatleader.com/player/76561198274713084/accgraph?leaderboardContext=general&type=acc&no_unranked_stars=true');
+                                data = await response.json();
+                                console.log('thingproxy successful!');
+                            } catch (thingproxyError) {
+                                throw new Error('All proxy methods failed. The dataset might be too large for proxy services. Try hosting on a web server instead of opening locally.');
+                            }
+                        }
+                    }
+                }
+                
+                if (!Array.isArray(data) || data.length === 0) {
+                    throw new Error('No data received from API');
+                }
+                
+                console.log(`Loaded ${data.length} scores successfully`);
+                
+                allScores = data.map((score, idx) => ({
+                    index: idx + 1,
+                    date: new Date(score.timeset * 1000),
+                    pp: score.pp,
+                    acc: score.acc * 100,
+                    stars: score.stars,
+                    songName: score.songName,
+                    difficulty: score.diff,
+                    mapper: score.mapper,
+                    color: getStarColor(score.stars),
+                    leaderboardId: score.leaderboardId
+                })).sort((a, b) => a.date - b.date);
+
+                // Recalculate indices after sorting
+                allScores.forEach((score, idx) => score.index = idx + 1);
+
+                loadingOverlay.classList.add('hidden');
+                createChart();
+            } catch (error) {
+                console.error('Error loading data:', error);
+                loadingOverlay.classList.add('hidden');
+                errorMessage.classList.add('show');
+                errorText.innerHTML = `<strong>Failed to load data:</strong> ${error.message}<br><br><em>Tip: If opening the file locally (file://), try uploading to GitHub Pages or running a local web server instead.</em>`;
+            }
+        }
+
+        function filterData() {
+            const diffFilter = document.getElementById('diffFilter').value;
+            const minStar = parseFloat(document.getElementById('minStar').value);
+            const maxStar = parseFloat(document.getElementById('maxStar').value);
+            const minPP = parseFloat(document.getElementById('minPP').value);
+
+            return allScores.filter(score => 
+                (diffFilter === 'all' || score.difficulty === diffFilter) &&
+                score.stars >= minStar &&
+                score.stars <= maxStar &&
+                score.pp >= minPP
+            );
+        }
+
+        function updateStats(data) {
+            document.getElementById('totalPlays').textContent = data.length;
+            document.getElementById('maxPP').textContent = data.length > 0 ? Math.max(...data.map(d => d.pp)).toFixed(1) : 0;
+            document.getElementById('avgAcc').textContent = data.length > 0 ? (data.reduce((sum, d) => sum + d.acc, 0) / data.length).toFixed(1) + '%' : '0%';
+            document.getElementById('avgStars').textContent = data.length > 0 ? (data.reduce((sum, d) => sum + d.stars, 0) / data.length).toFixed(1) + '⭐' : '0⭐';
+        }
+
+        function createChart() {
+            const ctx = document.getElementById('ppChart').getContext('2d');
+            const filteredData = filterData();
+            updateStats(filteredData);
+
+            if (chart) {
+                chart.destroy();
+            }
+
+            const config = getChartConfig(filteredData);
+            chart = new Chart(ctx, config);
+        }
+
+        function getChartConfig(data) {
+            if (currentView === 'line') {
+                return {
+                    type: 'line',
+                    data: {
+                        labels: data.map(d => d.index),
+                        datasets: [{
+                            label: 'PP per Play',
+                            data: data.map(d => d.pp),
+                            borderColor: '#8b5cf6',
+                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                            borderWidth: 3,
+                            pointBackgroundColor: data.map(d => d.color),
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                            tension: 0.1,
+                            fill: true
+                        }]
+                    },
+                    options: getLineOptions(data)
+                };
+            } else if (currentView === 'scatter') {
+                return {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'PP vs Accuracy',
+                            data: data.map(d => ({
+                                x: d.acc,
+                                y: d.pp,
+                                songName: d.songName,
+                                stars: d.stars,
+                                difficulty: d.difficulty,
+                                leaderboardId: d.leaderboardId
+                            })),
+                            backgroundColor: data.map(d => getStarColor(d.stars)),
+                            borderColor: data.map(d => diffColors[d.difficulty] || '#718096'),
+                            borderWidth: 2,
+                            pointRadius: 6,
+                            pointHoverRadius: 10
+                        }]
+                    },
+                    options: getScatterOptions()
+                };
+            } else if (currentView === 'bubble') {
+                return {
+                    type: 'bubble',
+                    data: {
+                        datasets: [{
+                            label: 'PP Performance',
+                            data: data.map(d => ({
+                                x: d.index,
+                                y: d.pp,
+                                r: d.stars * 2,
+                                songName: d.songName,
+                                stars: d.stars,
+                                acc: d.acc,
+                                difficulty: d.difficulty,
+                                leaderboardId: d.leaderboardId
+                            })),
+                            backgroundColor: data.map(d => getStarColor(d.stars) + '80'),
+                            borderColor: data.map(d => diffColors[d.difficulty] || '#718096'),
+                            borderWidth: 2
+                        }]
+                    },
+                    options: getBubbleOptions()
+                };
+            }
+        }
+
+        function getLineOptions(data) {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'nearest',
+                    intersect: false
+                },
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        const score = data[idx];
+                        if (score.leaderboardId) {
+                            window.open(`https://beatleader.com/leaderboard/global/${score.leaderboardId}`, '_blank');
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: (items) => {
+                                const idx = items[0].dataIndex;
+                                return data[idx].songName;
+                            },
+                            label: (context) => {
+                                const idx = context.dataIndex;
+                                const score = data[idx];
+                                return [
+                                    `PP: ${score.pp.toFixed(2)}`,
+                                    `Accuracy: ${score.acc.toFixed(2)}%`,
+                                    `Stars: ${score.stars.toFixed(2)}⭐`,
+                                    `Difficulty: ${score.difficulty}`,
+                                    `Date: ${score.date.toLocaleDateString()}`,
+                                    '',
+                                    '🖱️ Click to view on BeatLeader'
+                                ];
+                            }
+                        }
+                    },
+                    zoom: {
+                        pan: {
+                            enabled: true,
+                            mode: 'xy'
+                        },
+                        zoom: {
+                            wheel: {
+                                enabled: true
+                            },
+                            pinch: {
+                                enabled: true
+                            },
+                            mode: 'xy'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Play Number',
+                            font: { size: 14, weight: 'bold' }
+                        },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Performance Points',
+                            font: { size: 14, weight: 'bold' }
+                        },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                    }
+                }
+            };
+        }
+
+        function getScatterOptions() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        const filteredData = filterData();
+                        const score = filteredData[idx];
+                        if (score.leaderboardId) {
+                            window.open(`https://beatleader.com/leaderboard/global/${score.leaderboardId}`, '_blank');
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: (items) => items[0].raw.songName,
+                            label: (context) => {
+                                const d = context.raw;
+                                return [
+                                    `PP: ${d.y.toFixed(2)}`,
+                                    `Accuracy: ${d.x.toFixed(2)}%`,
+                                    `Stars: ${d.stars.toFixed(2)}⭐`,
+                                    `Difficulty: ${d.difficulty}`,
+                                    '',
+                                    '🖱️ Click to view on BeatLeader'
+                                ];
+                            }
+                        }
+                    },
+                    zoom: {
+                        pan: { enabled: true, mode: 'xy' },
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            mode: 'xy'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Accuracy (%)', font: { size: 14, weight: 'bold' } },
+                        min: 60,
+                        max: 100
+                    },
+                    y: {
+                        title: { display: true, text: 'Performance Points', font: { size: 14, weight: 'bold' } }
+                    }
+                }
+            };
+        }
+
+        function getBubbleOptions() {
+            return {
+                responsive: true,
+                maintainAspectRatio: false,
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        const filteredData = filterData();
+                        const score = filteredData[idx];
+                        if (score.leaderboardId) {
+                            window.open(`https://beatleader.com/leaderboard/global/${score.leaderboardId}`, '_blank');
+                        }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: (items) => items[0].raw.songName,
+                            label: (context) => {
+                                const d = context.raw;
+                                return [
+                                    `PP: ${d.y.toFixed(2)}`,
+                                    `Accuracy: ${d.acc.toFixed(2)}%`,
+                                    `Stars: ${d.stars.toFixed(2)}⭐`,
+                                    `Difficulty: ${d.difficulty}`,
+                                    `Play #${d.x}`,
+                                    '',
+                                    '🖱️ Click to view on BeatLeader'
+                                ];
+                            }
+                        }
+                    },
+                    zoom: {
+                        pan: { enabled: true, mode: 'xy' },
+                        zoom: {
+                            wheel: { enabled: true },
+                            pinch: { enabled: true },
+                            mode: 'xy'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Play Number', font: { size: 14, weight: 'bold' } }
+                    },
+                    y: {
+                        title: { display: true, text: 'Performance Points', font: { size: 14, weight: 'bold' } }
+                    }
+                }
+            };
+        }
+
+        function updateChart() {
+            createChart();
+        }
+
+        function updateStarRange() {
+            const minVal = document.getElementById('minStar').value;
+            const maxVal = document.getElementById('maxStar').value;
+            document.getElementById('minStarValue').textContent = minVal;
+            document.getElementById('maxStarValue').textContent = maxVal;
+            
+            if (parseFloat(minVal) > parseFloat(maxVal)) {
+                document.getElementById('maxStar').value = minVal;
+                document.getElementById('maxStarValue').textContent = minVal;
+            }
+            updateChart();
+        }
+
+        function updatePPRange() {
+            const minVal = document.getElementById('minPP').value;
+            document.getElementById('minPPValue').textContent = minVal;
+            updateChart();
+        }
+
+        function changeView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            createChart();
+        }
+
+        // Load data on page load
+        loadData();
+    </script>
+</body>
+</html>
