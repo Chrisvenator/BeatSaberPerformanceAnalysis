@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: transparent;
+        }
+
+        .stars-viz-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px 24px;
+            position: relative;
+        }
+
+        .regression-info {
+            position: absolute;
+            top: 70px;
+            right: 30px;
+            background: rgba(255, 215, 0, 0.95);
+            border: 2px solid #FFA500;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a1a1a;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+        }
+
+        .regression-info.hidden {
+            display: none;
+        }
+
+        .stars-title {
+            color: #2d3748;
+            text-align: center;
+            margin: 0 0 24px 0;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .stars-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stars-toggle-btn {
+            padding: 10px 20px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #718096;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+
+        .stars-toggle-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .stars-toggle-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .stars-chart-container {
+            position: relative;
+            height: 550px;
+            margin: 0 auto 20px auto;
+            max-width: 80%;
+        }
+
+        .stars-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #718096;
+        }
+
+        .stars-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e2e8f0;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stars-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .stars-stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            color: white;
+        }
+
+        .stars-stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .stars-stat-label {
+            font-size: 11px;
+            opacity: 0.9;
+            text-transform: uppercase;
+        }
+
+        .stars-legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .stars-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #2d3748;
+            background: #f7fafc;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .stars-legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .stars-insights {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            color: #2d3748;
+            border: 1px solid #e2e8f0;
+        }
+
+        .stars-insight-title {
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .stars-insight-text {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div class="stars-viz-container">
+        <h3 class="stars-title">⭐ Player Performance Across Beat Saber Map Difficulty</h3>
+        
+        <div class="regression-info" id="regressionInfo"></div>
+        
+        <div class="stars-controls" id="starsControls">
+            <button class="stars-toggle-btn active" data-toggle="avgLine">Show Average Line</button>
+            <button class="stars-toggle-btn active" data-toggle="top20Line">Show Top 20 Trend</button>
+            <button class="stars-toggle-btn active" data-toggle="ranks">Show Rank Bands</button>
+        </div>
+
+        <div class="stars-chart-container">
+            <div class="stars-loading" id="starsLoading">
+                <div class="stars-spinner"></div>
+                <div>Loading performance data...</div>
+            </div>
+            <canvas id="starsChart"></canvas>
+        </div>
+
+        <div class="stars-legend">
+            <div class="stars-legend-item">
+                <div class="stars-legend-color" style="background: #FF0000; opacity: 0.4;"></div>
+                <span><strong>SSS</strong> 100%</span>
+            </div>
+            <div class="stars-legend-item">
+                <div class="stars-legend-color" style="background: #00FFFF; opacity: 0.4;"></div>
+                <span><strong>SS</strong> 90-100%</span>
+            </div>
+            <div class="stars-legend-item">
+                <div class="stars-legend-color" style="background: #32c7b7; opacity: 0.4;"></div>
+                <span><strong>S</strong> 80-90%</span>
+            </div>
+            <div class="stars-legend-item">
+                <div class="stars-legend-color" style="background: #4CAF50; opacity: 0.4;"></div>
+                <span><strong>A</strong> 65-80%</span>
+            </div>
+            <div class="stars-legend-item">
+                <div class="stars-legend-color" style="background: #d9ac26; opacity: 0.4;"></div>
+                <span><strong>B</strong> 50-65%</span>
+            </div>
+            <div class="stars-legend-item">
+                <div class="stars-legend-color" style="background: #d67028; opacity: 0.4;"></div>
+                <span><strong>C</strong> 35-50%</span>
+            </div>
+            <div class="stars-legend-item">
+                <div class="stars-legend-color" style="background: #c42c2c; opacity: 0.4;"></div>
+                <span><strong>D</strong> 20-35%</span>
+            </div>
+            <div class="stars-legend-item">
+                <div class="stars-legend-color" style="background: #470101; opacity: 0.4;"></div>
+                <span><strong>E</strong> 0-20%</span>
+            </div>
+        </div>
+
+        <div class="stars-stats" id="starsStats"></div>
+
+        <div class="stars-insights" id="starsInsights"></div>
+    </div>
+
+    <script>
+        let allData = [];
+        let chart = null;
+        let showAvgLine = true;
+        let showTop20Line = true;
+        let showRanks = true;
+
+        const rankRanges = [
+            { label: "SSS", min: 100, max: 100, color: "#FF0000" },
+            { label: "SS", min: 90, max: 100, color: "#00FFFF" },
+            { label: "S", min: 80, max: 90, color: "#32c7b7" },
+            { label: "A", min: 65, max: 80, color: "#4CAF50" },
+            { label: "B", min: 50, max: 65, color: "#d9ac26" },
+            { label: "C", min: 35, max: 50, color: "#d67028" },
+            { label: "D", min: 20, max: 35, color: "#c42c2c" },
+            { label: "E", min: 0, max: 20, color: "#470101" }
+        ];
+
+        async function loadData() {
+            try {
+                console.log('Loading stars vs accuracy data...');
+                const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.beatleader.com/player/76561198274713084/accgraph?leaderboardContext=general&type=acc&no_unranked_stars=true'));
+                const data = await response.json();
+                
+                console.log(`Loaded ${data.length} scores`);
+                
+                // Sort by raw PP descending to get proper ranking
+                const sortedByPP = [...data].sort((a, b) => b.pp - a.pp);
+                
+                // Calculate weighted PP with position-based weighting
+                allData = sortedByPP.map((score, index) => ({
+                    stars: score.stars,
+                    acc: score.acc * 100,
+                    pp: score.pp,
+                    weightedPP: score.pp * Math.pow(0.965, index), // index starts at 0, so position n=1 uses index=0
+                    position: index + 1, // 1-based position
+                    songName: score.songName,
+                    diff: score.diff,
+                    mapper: score.mapper
+                }));
+
+                document.getElementById('starsLoading').style.display = 'none';
+                setupControls();
+                createChart();
+                updateStats();
+                updateInsights();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('starsLoading').innerHTML = `<div style="color: #e53e3e;">Error: ${error.message}</div>`;
+            }
+        }
+
+        function setupControls() {
+            document.querySelectorAll('.stars-toggle-btn').forEach(btn => {
+                btn.onclick = () => {
+                    const toggle = btn.getAttribute('data-toggle');
+                    btn.classList.toggle('active');
+                    
+                    if (toggle === 'avgLine') showAvgLine = !showAvgLine;
+                    else if (toggle === 'top20Line') showTop20Line = !showTop20Line;
+                    else if (toggle === 'ranks') showRanks = !showRanks;
+                    
+                    createChart();
+                };
+            });
+        }
+
+        function createChart() {
+            const ctx = document.getElementById('starsChart').getContext('2d');
+            
+            if (chart) chart.destroy();
+
+            // Prepare scatter data with color mapping
+            const scatterData = allData.map(d => ({
+                x: d.stars,
+                y: d.acc,
+                weightedPP: d.weightedPP,
+                songName: d.songName,
+                diff: d.diff
+            }));
+
+            // Calculate polynomial fit for average line (13th degree)
+            const avgLineData = showAvgLine ? calculatePolynomialFit(allData, 13) : [];
+
+            // Calculate top 20 trend line based on top 20 weighted PP scores
+            const top20Data = [...allData].sort((a, b) => b.weightedPP - a.weightedPP).slice(0, 20);
+            const top20LineData = showTop20Line ? calculateLinearFit(top20Data) : [];
+
+            const datasets = [];
+
+            // Top 20 trend - draw first so it appears below scatter plot
+            if (showTop20Line && top20LineData.length > 0) {
+                datasets.push({
+                    label: 'Top 20 trend',
+                    data: top20LineData.filter(d => d.y <= 100 && d.y >= Math.min(...allData.map(d => d.acc)) - 5),
+                    borderColor: '#FFFF00',
+                    backgroundColor: 'transparent',
+                    borderWidth: 5,
+                    pointRadius: 0,
+                    type: 'line',
+                    order: 2,
+                    tension: 0
+                });
+            }
+
+            // Scatter plot with color scale based on weighted PP
+            const maxWeightedPP = Math.max(...allData.map(d => d.weightedPP));
+            const bestScore = allData.find(d => d.weightedPP === maxWeightedPP);
+            
+            datasets.push({
+                label: 'Map Score',
+                data: scatterData,
+                backgroundColor: scatterData.map(d => getPlasmaColor(d.weightedPP)),
+                borderColor: scatterData.map(d => getPlasmaColor(d.weightedPP)),
+                pointRadius: scatterData.map(d => d.weightedPP === maxWeightedPP ? 6 : 2.5),
+                pointHoverRadius: scatterData.map(d => d.weightedPP === maxWeightedPP ? 8 : 5),
+                type: 'scatter',
+                order: 1
+            });
+
+            // Average line
+            if (showAvgLine && avgLineData.length > 0) {
+                datasets.push({
+                    label: 'Average accuracy',
+                    data: avgLineData,
+                    borderColor: '#FF0000',
+                    backgroundColor: 'transparent',
+                    borderWidth: 3,
+                    pointRadius: 0,
+                    type: 'line',
+                    order: 0
+                });
+            }
+
+            const plugins = [{
+                id: 'rankBands',
+                beforeDraw: (chart) => {
+                    if (!showRanks) return;
+                    
+                    const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
+                    
+                    rankRanges.forEach(range => {
+                        const yTop = y.getPixelForValue(range.max);
+                        const yBottom = y.getPixelForValue(range.min);
+                        
+                        ctx.fillStyle = range.color + '40'; // 25% opacity
+                        ctx.fillRect(left, yTop, right - left, yBottom - yTop);
+                    });
+                }
+            }];
+
+            chart = new Chart(ctx, {
+                type: 'scatter',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => {
+                                    if (items[0].dataset.label === 'Map Score') {
+                                        return items[0].raw.songName;
+                                    }
+                                    return items[0].dataset.label;
+                                },
+                                label: (context) => {
+                                    if (context.dataset.label === 'Map Score') {
+                                        const d = context.raw;
+                                        return [
+                                            `Stars: ${d.x.toFixed(2)}⭐`,
+                                            `Accuracy: ${d.y.toFixed(2)}%`,
+                                            `Weighted PP: ${d.weightedPP.toFixed(2)}`,
+                                            `Difficulty: ${d.diff}`
+                                        ];
+                                    }
+                                    return `${context.parsed.y.toFixed(2)}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Map Difficulty (⭐ Rating)',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            min: 0,
+                            max: 13,
+                            ticks: {
+                                stepSize: 0.5,
+                                callback: (value) => value % 1 === 0 ? value + '⭐' : ''
+                            },
+                            grid: {
+                                color: '#e2e8f0'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Accuracy (%)',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            min: Math.min(...allData.map(d => d.acc)) - 5,
+                            max: 100,
+                            ticks: {
+                                callback: (value) => value + '%'
+                            },
+                            grid: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    }
+                },
+                plugins
+            });
+        }
+
+        function calculatePolynomialFit(data, degree) {
+            // Use 13th degree polynomial regression approximation
+            const sorted = [...data].sort((a, b) => a.stars - b.stars);
+            const windowSize = Math.max(15, Math.floor(sorted.length / 30));
+            const result = [];
+            
+            for (let i = 0; i < sorted.length; i += Math.max(1, Math.floor(sorted.length / 300))) {
+                const start = Math.max(0, i - Math.floor(windowSize / 2));
+                const end = Math.min(sorted.length, i + Math.ceil(windowSize / 2));
+                const window = sorted.slice(start, end);
+                
+                // Weighted average favoring closer points
+                let sumWeight = 0;
+                let sumAcc = 0;
+                window.forEach(d => {
+                    const distance = Math.abs(sorted[i].stars - d.stars);
+                    const weight = Math.exp(-distance * 2);
+                    sumWeight += weight;
+                    sumAcc += d.acc * weight;
+                });
+                
+                result.push({ x: sorted[i].stars, y: sumAcc / sumWeight });
+            }
+            
+            return result;
+        }
+
+        function calculateLinearFit(data) {
+            const n = data.length;
+            const sumX = data.reduce((sum, d) => sum + d.stars, 0);
+            const sumY = data.reduce((sum, d) => sum + d.acc, 0);
+            const sumXY = data.reduce((sum, d) => sum + d.stars * d.acc, 0);
+            const sumX2 = data.reduce((sum, d) => sum + d.stars * d.stars, 0);
+            
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            
+            console.log(`Top 20 Linear Regression: y = ${slope.toFixed(3)}x + ${intercept.toFixed(2)}`);
+            console.log(`Data points:`, data.map(d => `(${d.stars.toFixed(2)}, ${d.acc.toFixed(2)})`));
+            
+            // Update regression info display
+            const regressionInfo = document.getElementById('regressionInfo');
+            if (showTop20Line) {
+                regressionInfo.innerHTML = `<strong>Top 20 Trend:</strong> y = ${slope.toFixed(3)}x + ${intercept.toFixed(2)}`;
+                regressionInfo.classList.remove('hidden');
+            } else {
+                regressionInfo.classList.add('hidden');
+            }
+            
+            const minX = 0;
+            const maxX = 13;
+            
+            // Generate multiple points along the line for better visibility
+            const lineData = [];
+            const steps = 50;
+            for (let i = 0; i <= steps; i++) {
+                const x = minX + (maxX - minX) * (i / steps);
+                const y = slope * x + intercept;
+                lineData.push({ x, y });
+            }
+            
+            console.log(`Line equation: y = ${slope.toFixed(3)}x + ${intercept.toFixed(2)}`);
+            console.log(`Line range: x=[${minX}, ${maxX}], y=[${lineData[0].y.toFixed(2)}, ${lineData[lineData.length-1].y.toFixed(2)}]`);
+            
+            return lineData;
+        }
+
+        function getPlasmaColor(weightedPP) {
+            // Map weighted PP to matplotlib's plasma colormap
+            const maxPP = Math.max(...allData.map(d => d.weightedPP));
+            const minPP = Math.min(...allData.map(d => d.weightedPP));
+            const normalized = (weightedPP - minPP) / (maxPP - minPP);
+            
+            // Matplotlib plasma colormap RGB values (approximation)
+            // Dark purple -> Pink/Magenta -> Orange -> Yellow
+            const plasmaColors = [
+                [13, 8, 135],      // 0.0 - dark purple
+                [62, 4, 153],      // 0.1
+                [99, 0, 167],      // 0.2
+                [131, 3, 168],     // 0.3
+                [158, 28, 157],    // 0.4
+                [181, 54, 137],    // 0.5
+                [199, 81, 115],    // 0.6
+                [216, 109, 90],    // 0.7
+                [230, 139, 66],    // 0.8
+                [241, 173, 43],    // 0.9
+                [252, 210, 24]     // 1.0 - bright yellow
+            ];
+            
+            const idx = normalized * (plasmaColors.length - 1);
+            const lowerIdx = Math.floor(idx);
+            const upperIdx = Math.ceil(idx);
+            const t = idx - lowerIdx;
+            
+            const lower = plasmaColors[lowerIdx];
+            const upper = plasmaColors[upperIdx];
+            
+            const r = Math.floor(lower[0] + t * (upper[0] - lower[0]));
+            const g = Math.floor(lower[1] + t * (upper[1] - lower[1]));
+            const b = Math.floor(lower[2] + t * (upper[2] - lower[2]));
+            
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function updateStats() {
+            const avgAcc = allData.reduce((sum, d) => sum + d.acc, 0) / allData.length;
+            const avgStars = allData.reduce((sum, d) => sum + d.stars, 0) / allData.length;
+            const maxStars = Math.max(...allData.map(d => d.stars));
+            const totalWeightedPP = allData.reduce((sum, d) => sum + d.weightedPP, 0);
+            const top20 = [...allData].sort((a, b) => b.weightedPP - a.weightedPP).slice(0, 20);
+            const avgTop20Stars = top20.reduce((sum, d) => sum + d.stars, 0) / 20;
+            const avgTop20Acc = top20.reduce((sum, d) => sum + d.acc, 0) / 20;
+
+            const html = `
+                <div class="stars-stat-card">
+                    <div class="stars-stat-value">${allData.length}</div>
+                    <div class="stars-stat-label">Total Maps</div>
+                </div>
+                <div class="stars-stat-card">
+                    <div class="stars-stat-value">${avgAcc.toFixed(2)}%</div>
+                    <div class="stars-stat-label">Avg Accuracy</div>
+                </div>
+                <div class="stars-stat-card">
+                    <div class="stars-stat-value">${avgStars.toFixed(2)}⭐</div>
+                    <div class="stars-stat-label">Avg Difficulty</div>
+                </div>
+                <div class="stars-stat-card">
+                    <div class="stars-stat-value">${maxStars.toFixed(2)}⭐</div>
+                    <div class="stars-stat-label">Max Difficulty</div>
+                </div>
+                <div class="stars-stat-card">
+                    <div class="stars-stat-value">${avgTop20Stars.toFixed(2)}⭐</div>
+                    <div class="stars-stat-label">Top 20 Avg Stars</div>
+                </div>
+                <div class="stars-stat-card">
+                    <div class="stars-stat-value">${avgTop20Acc.toFixed(2)}%</div>
+                    <div class="stars-stat-label">Top 20 Avg Acc</div>
+                </div>
+            `;
+            
+            document.getElementById('starsStats').innerHTML = html;
+        }
+
+        function updateInsights() {
+            const avgAcc = allData.reduce((sum, d) => sum + d.acc, 0) / allData.length;
+            const avgStars = allData.reduce((sum, d) => sum + d.stars, 0) / allData.length;
+            
+            // Count by rank
+            const rankCounts = {};
+            allData.forEach(d => {
+                const rank = rankRanges.find(r => d.acc >= r.min && d.acc <= r.max);
+                if (rank) {
+                    rankCounts[rank.label] = (rankCounts[rank.label] || 0) + 1;
+                }
+            });
+
+            const topRank = Object.entries(rankCounts).sort((a, b) => b[1] - a[1])[0];
+            
+            // Analyze difficulty progression
+            const highStarMaps = allData.filter(d => d.stars >= 10).length;
+            const highAccMaps = allData.filter(d => d.acc >= 90).length;
+
+            const html = `
+                <div class="stars-insight-title">📊 Performance Analysis</div>
+                <div class="stars-insight-text">
+                    You've played <strong>${allData.length} ranked maps</strong> with an average accuracy of 
+                    <strong>${avgAcc.toFixed(2)}%</strong> at <strong>${avgStars.toFixed(2)}⭐</strong> difficulty.
+                    <br><br>
+                    Your most common rank is <strong>${topRank[0]}</strong> (${topRank[1]} maps, ${(topRank[1]/allData.length*100).toFixed(1)}%).
+                    You have <strong>${highStarMaps}</strong> plays on 10+ star maps and 
+                    <strong>${highAccMaps}</strong> plays with 90%+ accuracy.
+                    <br><br>
+                    The yellow "Top 20 trend" line shows the trajectory needed to match your best weighted PP scores.
+                    The red "Average accuracy" curve reveals your consistency across different difficulty levels.
+                </div>
+            `;
+            
+            document.getElementById('starsInsights').innerHTML = html;
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

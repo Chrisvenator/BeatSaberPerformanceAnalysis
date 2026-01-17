@@ -528,25 +528,15 @@
         <div class="grid-container">
             <div class="card visualization-area">
                 <div class="viz-tabs">
-                    <button class="viz-tab active" data-viz="pp-progression">PP Progression</button>
-                    <button class="viz-tab" data-viz="acc-distribution">Acc Distribution</button>
+                    <button class="viz-tab active" data-viz="rank-history">Player Performance</button>
                     <button class="viz-tab" data-viz="pp-breakdown">PP Breakdown</button>
-                    <button class="viz-tab" data-viz="rank-history">Rank History</button>
-                    <button class="viz-tab" data-viz="timing-analysis">Timing Analysis</button>
-                    <button class="viz-tab" data-viz="activity-heatmap">Activity Heatmap</button>
+                    <button class="viz-tab" data-viz="pp-progression">PP Progression</button>
+                    <button class="viz-tab" data-viz="acc-distribution">Acc Distribution</button>
                 </div>
 
-                <div class="viz-content active" id="pp-progression">
+                <div class="viz-content active" id="rank-history">
                     <iframe
-                        src="pp-progression.html"
-                        style="width: 100%; height: 1000px; border: none; border-radius: 12px; background: white;"
-                        title="PP Progression Chart">
-                    </iframe>
-                </div>
-
-                <div class="viz-content" id="acc-distribution">
-                    <iframe
-                        src="acc-distribution.html"
+                        src="player-performance.html"
                         style="width: 100%; height: 1000px; border: none; border-radius: 12px; background: white;"
                         title="PP Progression Chart">
                     </iframe>
@@ -560,22 +550,20 @@
                     </iframe>
                 </div>
 
-                <div class="viz-content" id="rank-history">
-                    <div class="chart-placeholder">
-                        📉 Global & Country Rank Progression
-                    </div>
+                <div class="viz-content" id="pp-progression">
+                    <iframe
+                        src="pp-progression.html"
+                        style="width: 100%; height: 1000px; border: none; border-radius: 12px; background: white;"
+                        title="PP Progression Chart">
+                    </iframe>
                 </div>
 
-                <div class="viz-content" id="timing-analysis">
-                    <div class="chart-placeholder">
-                        ⚖️ Left Saber: 40.9ms • Right Saber: 43.5ms
-                    </div>
-                </div>
-
-                <div class="viz-content" id="activity-heatmap">
-                    <div class="chart-placeholder">
-                        🗓️ Play Activity Calendar Heatmap
-                    </div>
+                <div class="viz-content" id="acc-distribution">
+                    <iframe
+                        src="acc-distribution.html"
+                        style="width: 100%; height: 1000px; border: none; border-radius: 12px; background: white;"
+                        title="PP Progression Chart">
+                    </iframe>
                 </div>
             </div>
         </div>
