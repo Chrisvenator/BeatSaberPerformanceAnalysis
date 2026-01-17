@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: transparent;
+        }
+
+        .spider-viz-container {
+            background: white;
+            border-radius: 16px;
+            padding: 30px 24px;
+        }
+
+        .spider-title {
+            color: #2d3748;
+            text-align: center;
+            margin: 0 0 24px 0;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .spider-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .spider-view-btn {
+            padding: 10px 20px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #718096;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+
+        .spider-view-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .spider-view-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .spider-chart-container {
+            position: relative;
+            height: 500px;
+            margin-bottom: 20px;
+        }
+
+        .spider-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #718096;
+        }
+
+        .spider-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e2e8f0;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spider-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .spider-stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+            color: white;
+        }
+
+        .spider-stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .spider-stat-label {
+            font-size: 11px;
+            opacity: 0.8;
+            text-transform: uppercase;
+        }
+
+        .spider-legend {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .spider-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #2d3748;
+            background: #f7fafc;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .spider-legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .spider-insights {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            color: #2d3748;
+            border: 1px solid #e2e8f0;
+        }
+
+        .spider-insight-title {
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .spider-insight-text {
+            font-size: 14px;
+            line-height: 1.8;
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body>
+    <div class="spider-viz-container">
+        <h3 class="spider-title">🕸️ PP Component Analysis</h3>
+        
+        <div class="spider-controls" id="spiderControls">
+            <button class="spider-view-btn active" data-view="components">By Component</button>
+            <button class="spider-view-btn" data-view="difficulty">By Difficulty</button>
+        </div>
+
+        <div class="spider-chart-container">
+            <div class="spider-loading" id="spiderLoading">
+                <div class="spider-spinner"></div>
+                <div>Loading spider chart data...</div>
+            </div>
+            <canvas id="spiderChart"></canvas>
+        </div>
+
+        <div class="spider-legend" id="spiderLegend"></div>
+
+        <div class="spider-stats" id="spiderStats"></div>
+
+        <div class="spider-insights" id="spiderInsights"></div>
+    </div>
+
+    <script>
+        const diffColors = {
+            'Easy': 'rgba(72, 187, 120, 0.2)',
+            'Normal': 'rgba(56, 178, 172, 0.2)',
+            'Hard': 'rgba(255, 140, 66, 0.2)',
+            'Expert': 'rgba(159, 122, 234, 0.2)',
+            'ExpertPlus': 'rgba(245, 101, 101, 0.2)'
+        };
+
+        const diffBorderColors = {
+            'Easy': 'rgba(72, 187, 120, 1)',
+            'Normal': 'rgba(56, 178, 172, 1)',
+            'Hard': 'rgba(255, 140, 66, 1)',
+            'Expert': 'rgba(159, 122, 234, 1)',
+            'ExpertPlus': 'rgba(245, 101, 101, 1)'
+        };
+
+        const diffOrder = ['Easy', 'Normal', 'Hard', 'Expert', 'ExpertPlus'];
+
+        let allData = [];
+        let chart = null;
+        let currentView = 'components';
+
+        async function loadData() {
+            try {
+                console.log('Loading spider chart data...');
+                const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.beatleader.com/player/76561198274713084/accgraph?leaderboardContext=general&type=acc&no_unranked_stars=true'));
+                const data = await response.json();
+                
+                console.log(`Loaded ${data.length} scores`);
+                
+                allData = data.map(score => {
+                    const totalPP = score.pp;
+                    const acc = score.acc;
+                    const stars = score.stars;
+                    
+                    const accWeight = Math.pow(acc, 10);
+                    const passWeight = Math.pow(stars / 15, 2);
+                    const techWeight = stars > 8 ? (stars - 8) / 12 : 0;
+                    
+                    const totalWeight = accWeight + passWeight + techWeight;
+                    
+                    return {
+                        totalPP: totalPP,
+                        accPP: (totalPP * accWeight / totalWeight) || 0,
+                        passPP: (totalPP * passWeight / totalWeight) || 0,
+                        techPP: (totalPP * techWeight / totalWeight) || 0,
+                        diff: score.diff,
+                        songName: score.songName,
+                        stars: score.stars,
+                        acc: score.acc * 100
+                    };
+                });
+
+                document.getElementById('spiderLoading').style.display = 'none';
+                setupControls();
+                updateVisualization();
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('spiderLoading').innerHTML = `<div style="color: #ff6b6b;">Error: ${error.message}</div>`;
+            }
+        }
+
+        function setupControls() {
+            const controls = document.getElementById('spiderControls');
+            controls.querySelectorAll('.spider-view-btn').forEach(btn => {
+                btn.onclick = () => {
+                    currentView = btn.getAttribute('data-view');
+                    controls.querySelectorAll('.spider-view-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    updateVisualization();
+                };
+            });
+        }
+
+        function updateVisualization() {
+            if (currentView === 'components') {
+                createComponentsChart();
+            } else {
+                createDifficultyChart();
+            }
+            updateStats();
+            updateInsights();
+        }
+
+        function createComponentsChart() {
+            const ctx = document.getElementById('spiderChart').getContext('2d');
+            
+            // Group by difficulty
+            const datasets = diffOrder.map(diff => {
+                const scores = allData.filter(d => d.diff === diff);
+                const totalAccPP = scores.reduce((sum, s) => sum + s.accPP, 0);
+                const totalPassPP = scores.reduce((sum, s) => sum + s.passPP, 0);
+                const totalTechPP = scores.reduce((sum, s) => sum + s.techPP, 0);
+                
+                return {
+                    label: diff === 'ExpertPlus' ? 'Expert+' : diff,
+                    data: [totalAccPP, totalPassPP, totalTechPP],
+                    backgroundColor: diffColors[diff],
+                    borderColor: diffBorderColors[diff],
+                    borderWidth: 2,
+                    pointBackgroundColor: diffBorderColors[diff],
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 1,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                };
+            }).filter(dataset => dataset.data.some(v => v > 0));
+
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Accuracy PP', 'Pass PP', 'Technical PP'],
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#718096',
+                                backdropColor: 'transparent',
+                                font: { size: 12 }
+                            },
+                            grid: {
+                                color: '#e2e8f0'
+                            },
+                            pointLabels: {
+                                color: '#2d3748',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            angleLines: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    return `${context.dataset.label}: ${context.parsed.r.toFixed(2)} PP`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            updateLegend(datasets.map(d => ({ name: d.label, color: d.borderColor })));
+        }
+
+        function createDifficultyChart() {
+            const ctx = document.getElementById('spiderChart').getContext('2d');
+            
+            // Create datasets for each PP component
+            const datasets = [
+                {
+                    label: 'Accuracy PP',
+                    data: diffOrder.map(diff => {
+                        const scores = allData.filter(d => d.diff === diff);
+                        return scores.reduce((sum, s) => sum + s.accPP, 0);
+                    }),
+                    backgroundColor: 'rgba(66, 153, 225, 0.2)',
+                    borderColor: 'rgba(66, 153, 225, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(66, 153, 225, 1)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 1,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                },
+                {
+                    label: 'Pass PP',
+                    data: diffOrder.map(diff => {
+                        const scores = allData.filter(d => d.diff === diff);
+                        return scores.reduce((sum, s) => sum + s.passPP, 0);
+                    }),
+                    backgroundColor: 'rgba(72, 187, 120, 0.2)',
+                    borderColor: 'rgba(72, 187, 120, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(72, 187, 120, 1)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 1,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                },
+                {
+                    label: 'Technical PP',
+                    data: diffOrder.map(diff => {
+                        const scores = allData.filter(d => d.diff === diff);
+                        return scores.reduce((sum, s) => sum + s.techPP, 0);
+                    }),
+                    backgroundColor: 'rgba(237, 100, 166, 0.2)',
+                    borderColor: 'rgba(237, 100, 166, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(237, 100, 166, 1)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 1,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                }
+            ];
+
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: diffOrder.map(d => d === 'ExpertPlus' ? 'Expert+' : d),
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#718096',
+                                backdropColor: 'transparent',
+                                font: { size: 12 }
+                            },
+                            grid: {
+                                color: '#e2e8f0'
+                            },
+                            pointLabels: {
+                                color: '#2d3748',
+                                font: { size: 14, weight: 'bold' }
+                            },
+                            angleLines: {
+                                color: '#e2e8f0'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    return `${context.dataset.label}: ${context.parsed.r.toFixed(2)} PP`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            updateLegend(datasets.map(d => ({ name: d.label, color: d.borderColor })));
+        }
+
+        function updateLegend(items) {
+            const html = items.map(item => `
+                <div class="spider-legend-item">
+                    <div class="spider-legend-color" style="background: ${item.color};"></div>
+                    <span>${item.name}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('spiderLegend').innerHTML = html;
+        }
+
+        function updateStats() {
+            const totalPP = allData.reduce((sum, d) => sum + d.totalPP, 0);
+            const totalAccPP = allData.reduce((sum, d) => sum + d.accPP, 0);
+            const totalPassPP = allData.reduce((sum, d) => sum + d.passPP, 0);
+            const totalTechPP = allData.reduce((sum, d) => sum + d.techPP, 0);
+
+            const html = `
+                <div class="spider-stat-card">
+                    <div class="spider-stat-value">${allData.length}</div>
+                    <div class="spider-stat-label">Total Plays</div>
+                </div>
+                <div class="spider-stat-card">
+                    <div class="spider-stat-value">${totalPP.toFixed(0)}</div>
+                    <div class="spider-stat-label">Total PP</div>
+                </div>
+                <div class="spider-stat-card" style="border-left: 3px solid rgba(66, 153, 225, 1);">
+                    <div class="spider-stat-value">${totalAccPP.toFixed(0)}</div>
+                    <div class="spider-stat-label">Acc PP</div>
+                </div>
+                <div class="spider-stat-card" style="border-left: 3px solid rgba(72, 187, 120, 1);">
+                    <div class="spider-stat-value">${totalPassPP.toFixed(0)}</div>
+                    <div class="spider-stat-label">Pass PP</div>
+                </div>
+                <div class="spider-stat-card" style="border-left: 3px solid rgba(237, 100, 166, 1);">
+                    <div class="spider-stat-value">${totalTechPP.toFixed(0)}</div>
+                    <div class="spider-stat-label">Tech PP</div>
+                </div>
+            `;
+            
+            document.getElementById('spiderStats').innerHTML = html;
+        }
+
+        function updateInsights() {
+            const byDiff = diffOrder.map(diff => {
+                const scores = allData.filter(d => d.diff === diff);
+                const totalPP = scores.reduce((sum, s) => sum + s.totalPP, 0);
+                const totalAccPP = scores.reduce((sum, s) => sum + s.accPP, 0);
+                const totalPassPP = scores.reduce((sum, s) => sum + s.passPP, 0);
+                const totalTechPP = scores.reduce((sum, s) => sum + s.techPP, 0);
+                
+                return { diff, totalPP, accPP: totalAccPP, passPP: totalPassPP, techPP: totalTechPP, count: scores.length };
+            }).filter(d => d.count > 0).sort((a, b) => b.totalPP - a.totalPP);
+
+            const topDiff = byDiff[0];
+            const topDiffName = topDiff.diff === 'ExpertPlus' ? 'Expert+' : topDiff.diff;
+            
+            const dominant = Math.max(topDiff.accPP, topDiff.passPP, topDiff.techPP);
+            let component = '';
+            if (dominant === topDiff.accPP) component = 'Accuracy';
+            else if (dominant === topDiff.passPP) component = 'Pass';
+            else component = 'Technical';
+
+            const html = `
+                <div class="spider-insight-title">📊 Spider Chart Analysis</div>
+                <div class="spider-insight-text">
+                    ${currentView === 'components' 
+                        ? `The spider chart shows PP component distribution across each difficulty level. 
+                           Each colored area represents a different difficulty, with vertices showing Accuracy, Pass, and Technical PP.
+                           <br><br>
+                           Your strongest difficulty is <strong>${topDiffName}</strong> with <strong>${topDiff.totalPP.toFixed(0)} PP</strong> 
+                           across ${topDiff.count} plays, dominated by <strong>${component} PP</strong>.`
+                        : `The spider chart shows how each PP component (Accuracy, Pass, Technical) varies across difficulty levels.
+                           Each colored area represents a PP component type, with vertices showing accumulation in each difficulty.
+                           <br><br>
+                           You've accumulated the most PP in <strong>${topDiffName}</strong> difficulty, 
+                           with a total of <strong>${topDiff.totalPP.toFixed(0)} PP</strong> from ${topDiff.count} plays.`
+                    }
+                </div>
+            `;
+            
+            document.getElementById('spiderInsights').innerHTML = html;
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
