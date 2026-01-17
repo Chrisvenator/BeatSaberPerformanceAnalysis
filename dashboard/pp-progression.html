@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PP Progression Visualization</title>
+    <title>PP Progression with Brushing & Linking</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <style>
         body {
@@ -21,6 +21,18 @@
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
             max-width: 1400px;
             margin: 0 auto;
+        }
+
+        .info-banner {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-banner strong {
+            color: #667eea;
         }
 
         .controls {
@@ -57,14 +69,6 @@
             border-color: #667eea;
         }
 
-        .range-display {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: #718096;
-            margin-top: 4px;
-        }
-
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -78,6 +82,11 @@
             padding: 16px;
             border-radius: 12px;
             text-align: center;
+            transition: transform 0.2s ease;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-2px);
         }
 
         .stat-value {
@@ -91,10 +100,73 @@
             opacity: 0.9;
         }
 
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
         .chart-wrapper {
             position: relative;
+            height: 400px;
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .chart-wrapper.full-width {
+            grid-column: 1 / -1;
             height: 500px;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 12px;
+        }
+
+        .brush-controls {
+            display: flex;
+            gap: 12px;
             margin-bottom: 20px;
+        }
+
+        .brush-btn {
+            padding: 10px 20px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #718096;
+            transition: all 0.3s ease;
+        }
+
+        .brush-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .brush-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .selection-info {
+            background: #edf2f7;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #2d3748;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .selection-info.show {
+            display: block;
         }
 
         .legend {
@@ -158,93 +230,29 @@
             color: #2d3748;
             font-weight: 600;
         }
-
-        .error-message {
-            background: #fed7d7;
-            border: 2px solid #fc8181;
-            color: #742a2a;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .error-message.show {
-            display: block;
-        }
-
-        .error-title {
-            font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 8px;
-        }
-
-        .retry-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            margin-top: 12px;
-            transition: background 0.3s ease;
-        }
-
-        .retry-btn:hover {
-            background: #5568d3;
-        }
-
-        .view-toggle {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .view-btn {
-            padding: 10px 20px;
-            border: 2px solid #e2e8f0;
-            background: white;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            color: #718096;
-            transition: all 0.3s ease;
-        }
-
-        .view-btn:hover {
-            border-color: #667eea;
-            color: #667eea;
-        }
-
-        .view-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: transparent;
-        }
     </style>
 </head>
 <body>
     <div class="viz-container">
-        <div>Alls scores are clickable :)</div>
-        <h2 style="margin-bottom: 20px; color: #2d3748;">🎮 Performance Points Progression</h2>
+        <h2 style="margin-bottom: 20px; color: #2d3748;">🎮 Performance Points with Brushing & Linking</h2>
 
-        <div class="error-message" id="errorMessage">
-            <div class="error-title">❌ Error Loading Data</div>
-            <div id="errorText">Failed to load Beat Saber data. Please try again.</div>
-            <button class="retry-btn" onclick="loadData()">🔄 Retry</button>
+        <div class="info-banner">
+            <strong>How to use Brushing & Linking:</strong> On the timeline, click and drag to select a range (like a slider). 
+            On scatter/star charts, click points to toggle selection. Click nodes to view on BeatLeader. Use "Clear Selection" button to reset. There is a bug that when you select, you have to refresh the page so that everything works as intended
         </div>
 
-        <div class="view-toggle">
-            <button class="view-btn active" onclick="changeView('line')">Line Chart</button>
-            <button class="view-btn" onclick="changeView('scatter')">Scatter Plot</button>
-            <button class="view-btn" onclick="changeView('bubble')">Bubble Chart</button>
+        <div class="brush-controls">
+            <button class="brush-btn" onclick="clearSelection()">🗑️ Clear Selection</button>
+        </div>
+
+        <div class="selection-info" id="selectionInfo">
+            <strong>Selection:</strong> <span id="selectionText">No data selected</span>
         </div>
 
         <div class="controls">
             <div class="control-group">
                 <label>Difficulty Filter</label>
-                <select id="diffFilter" onchange="updateChart()">
+                <select id="diffFilter" onchange="updateAllCharts()">
                     <option value="all">All Difficulties</option>
                     <option value="Easy">Easy</option>
                     <option value="Normal">Normal</option>
@@ -263,17 +271,16 @@
                 <label>Maximum Stars: <span id="maxStarValue">20</span>⭐</label>
                 <input type="range" id="maxStar" min="0" max="20" value="20" step="0.5" oninput="updateStarRange()">
             </div>
-
-            <div class="control-group">
-                <label>Minimum PP: <span id="minPPValue">0</span></label>
-                <input type="range" id="minPP" min="0" max="400" value="0" step="10" oninput="updatePPRange()">
-            </div>
         </div>
 
         <div class="stats-grid">
             <div class="stat-box">
                 <div class="stat-value" id="totalPlays">0</div>
                 <div class="stat-label">Total Plays</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="selectedPlays">0</div>
+                <div class="stat-label">Selected Plays</div>
             </div>
             <div class="stat-box">
                 <div class="stat-value" id="maxPP">0</div>
@@ -289,12 +296,24 @@
             </div>
         </div>
 
-        <div class="chart-wrapper">
+        <div class="chart-wrapper full-width">
             <div class="loading-overlay" id="loadingOverlay">
                 <div class="spinner"></div>
                 <div class="loading-text">Loading Beat Saber data...</div>
             </div>
-            <canvas id="ppChart"></canvas>
+            <div class="chart-title">PP Progression Timeline</div>
+            <canvas id="timelineChart"></canvas>
+        </div>
+
+        <div class="chart-grid">
+            <div class="chart-wrapper">
+                <div class="chart-title">PP vs Accuracy</div>
+                <canvas id="scatterChart"></canvas>
+            </div>
+            <div class="chart-wrapper">
+                <div class="chart-title">Star Rating Distribution</div>
+                <canvas id="starChart"></canvas>
+            </div>
         </div>
 
         <div class="legend">
@@ -323,13 +342,18 @@
                 <span>14+ Stars (Elite)</span>
             </div>
         </div>
-        Color of the strokes around the circles indicate the Difficulty (Easy, Medium, Hard, Ex, Ex+)
     </div>
 
     <script>
         let allScores = [];
-        let chart = null;
-        let currentView = 'line';
+        let selectedIndices = new Set();
+        let isDragging = false;
+        let dragStart = null;
+        let brushOverlay = null;
+        
+        let timelineChart = null;
+        let scatterChart = null;
+        let starChart = null;
 
         const diffColors = {
             'Easy': '#3adb76',
@@ -350,65 +374,17 @@
 
         async function loadData() {
             const loadingOverlay = document.getElementById('loadingOverlay');
-            const errorMessage = document.getElementById('errorMessage');
-            const errorText = document.getElementById('errorText');
-            
-            // Show loading, hide error
             loadingOverlay.classList.remove('hidden');
-            errorMessage.classList.remove('show');
             
             try {
-                // Try different methods to fetch data
                 let data;
-                
-                // Method 1: Try direct fetch (some APIs allow CORS from file://)
                 try {
-                    console.log('Trying direct API call...');
                     const response = await fetch('https://api.beatleader.com/player/76561198274713084/accgraph?leaderboardContext=general&type=acc&no_unranked_stars=true');
                     data = await response.json();
-                    console.log('Direct API call successful!');
-                } catch (directError) {
-                    console.log('Direct API failed:', directError.message);
-                    
-                    // Method 2: Try corsproxy.io
-                    try {
-                        console.log('Trying corsproxy.io...');
-                        const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.beatleader.com/player/76561198274713084/accgraph?leaderboardContext=general&type=acc&no_unranked_stars=true'));
-                        data = await response.json();
-                        console.log('corsproxy.io successful!');
-                    } catch (corsproxyError) {
-                        console.log('corsproxy.io failed:', corsproxyError.message);
-                        
-                        // Method 3: Try allorigins with get endpoint (not raw)
-                        try {
-                            console.log('Trying allorigins get endpoint...');
-                            const apiUrl = 'https://api.beatleader.com/player/76561198274713084/accgraph?leaderboardContext=general&type=acc&no_unranked_stars=true';
-                            const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(apiUrl);
-                            const response = await fetch(proxyUrl);
-                            const proxyData = await response.json();
-                            data = JSON.parse(proxyData.contents);
-                            console.log('allorigins get endpoint successful!');
-                        } catch (aloriginsError) {
-                            console.log('allorigins get failed:', aloriginsError.message);
-                            
-                            // Method 4: Try cors-anywhere alternative
-                            try {
-                                console.log('Trying thingproxy...');
-                                const response = await fetch('https://thingproxy.freeboard.io/fetch/https://api.beatleader.com/player/76561198274713084/accgraph?leaderboardContext=general&type=acc&no_unranked_stars=true');
-                                data = await response.json();
-                                console.log('thingproxy successful!');
-                            } catch (thingproxyError) {
-                                throw new Error('All proxy methods failed. The dataset might be too large for proxy services. Try hosting on a web server instead of opening locally.');
-                            }
-                        }
-                    }
+                } catch (error) {
+                    const response = await fetch('https://corsproxy.io/?' + encodeURIComponent('https://api.beatleader.com/player/76561198274713084/accgraph?leaderboardContext=general&type=acc&no_unranked_stars=true'));
+                    data = await response.json();
                 }
-                
-                if (!Array.isArray(data) || data.length === 0) {
-                    throw new Error('No data received from API');
-                }
-                
-                console.log(`Loaded ${data.length} scores successfully`);
                 
                 allScores = data.map((score, idx) => ({
                     index: idx + 1,
@@ -423,16 +399,14 @@
                     leaderboardId: score.leaderboardId
                 })).sort((a, b) => a.date - b.date);
 
-                // Recalculate indices after sorting
                 allScores.forEach((score, idx) => score.index = idx + 1);
 
                 loadingOverlay.classList.add('hidden');
-                createChart();
+                createAllCharts();
             } catch (error) {
                 console.error('Error loading data:', error);
                 loadingOverlay.classList.add('hidden');
-                errorMessage.classList.add('show');
-                errorText.innerHTML = `<strong>Failed to load data:</strong> ${error.message}<br><br><em>Tip: If opening the file locally (file://), try uploading to GitHub Pages or running a local web server instead.</em>`;
+                alert('Failed to load data. Please refresh the page.');
             }
         }
 
@@ -440,297 +414,457 @@
             const diffFilter = document.getElementById('diffFilter').value;
             const minStar = parseFloat(document.getElementById('minStar').value);
             const maxStar = parseFloat(document.getElementById('maxStar').value);
-            const minPP = parseFloat(document.getElementById('minPP').value);
 
             return allScores.filter(score => 
                 (diffFilter === 'all' || score.difficulty === diffFilter) &&
                 score.stars >= minStar &&
-                score.stars <= maxStar &&
-                score.pp >= minPP
+                score.stars <= maxStar
             );
         }
 
         function updateStats(data) {
+            const selectedData = data.filter((_, idx) => selectedIndices.has(idx));
+            const statsData = selectedIndices.size > 0 ? selectedData : data;
+
             document.getElementById('totalPlays').textContent = data.length;
-            document.getElementById('maxPP').textContent = data.length > 0 ? Math.max(...data.map(d => d.pp)).toFixed(1) : 0;
-            document.getElementById('avgAcc').textContent = data.length > 0 ? (data.reduce((sum, d) => sum + d.acc, 0) / data.length).toFixed(1) + '%' : '0%';
-            document.getElementById('avgStars').textContent = data.length > 0 ? (data.reduce((sum, d) => sum + d.stars, 0) / data.length).toFixed(1) + '⭐' : '0⭐';
+            document.getElementById('selectedPlays').textContent = selectedIndices.size;
+            document.getElementById('maxPP').textContent = statsData.length > 0 ? Math.max(...statsData.map(d => d.pp)).toFixed(1) : 0;
+            document.getElementById('avgAcc').textContent = statsData.length > 0 ? (statsData.reduce((sum, d) => sum + d.acc, 0) / statsData.length).toFixed(1) + '%' : '0%';
+            document.getElementById('avgStars').textContent = statsData.length > 0 ? (statsData.reduce((sum, d) => sum + d.stars, 0) / statsData.length).toFixed(1) + '⭐' : '0⭐';
         }
 
-        function createChart() {
-            const ctx = document.getElementById('ppChart').getContext('2d');
-            const filteredData = filterData();
-            updateStats(filteredData);
-
-            if (chart) {
-                chart.destroy();
-            }
-
-            const config = getChartConfig(filteredData);
-            chart = new Chart(ctx, config);
+        function getPointStyle(dataIndex, isSelected) {
+            return {
+                radius: isSelected ? 8 : 5,
+                borderWidth: isSelected ? 3 : 2,
+                backgroundColor: isSelected ? '#fbbf24' : undefined
+            };
         }
 
-        function getChartConfig(data) {
-            if (currentView === 'line') {
-                return {
-                    type: 'line',
-                    data: {
-                        labels: data.map(d => d.index),
-                        datasets: [{
-                            label: 'PP per Play',
-                            data: data.map(d => d.pp),
-                            borderColor: '#8b5cf6',
-                            backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                            borderWidth: 3,
-                            pointBackgroundColor: data.map(d => d.color),
-                            pointBorderColor: '#fff',
-                            pointBorderWidth: 2,
-                            pointRadius: 5,
-                            pointHoverRadius: 8,
-                            tension: 0.1,
-                            fill: true
-                        }]
+        function createAllCharts() {
+            const data = filterData();
+            updateStats(data);
+            createTimelineChart(data);
+            createScatterChart(data);
+            createStarChart(data);
+        }
+
+        function createTimelineChart(data) {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+            if (timelineChart) timelineChart.destroy();
+
+            timelineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => d.index),
+                    datasets: [{
+                        label: 'PP per Play',
+                        data: data.map(d => d.pp),
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: data.map((d, idx) => 
+                            selectedIndices.has(idx) ? '#fbbf24' : d.color
+                        ),
+                        pointBorderColor: data.map((d, idx) => 
+                            selectedIndices.has(idx) ? '#f59e0b' : '#fff'
+                        ),
+                        pointBorderWidth: data.map((_, idx) => 
+                            selectedIndices.has(idx) ? 3 : 2
+                        ),
+                        pointRadius: data.map((_, idx) => 
+                            selectedIndices.has(idx) ? 8 : 5
+                        ),
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (event, elements) => {
+                        // Only handle node clicks to open BeatLeader
+                        if (elements.length > 0) {
+                            const idx = elements[0].index;
+                            const score = data[idx];
+                            if (score.leaderboardId) {
+                                window.open(`https://beatleader.com/leaderboard/global/${score.leaderboardId}`, '_blank');
+                            }
+                        }
                     },
-                    options: getLineOptions(data)
-                };
-            } else if (currentView === 'scatter') {
-                return {
-                    type: 'scatter',
-                    data: {
-                        datasets: [{
-                            label: 'PP vs Accuracy',
-                            data: data.map(d => ({
-                                x: d.acc,
-                                y: d.pp,
-                                songName: d.songName,
-                                stars: d.stars,
-                                difficulty: d.difficulty,
-                                leaderboardId: d.leaderboardId
-                            })),
-                            backgroundColor: data.map(d => getStarColor(d.stars)),
-                            borderColor: data.map(d => diffColors[d.difficulty] || '#718096'),
-                            borderWidth: 2,
-                            pointRadius: 6,
-                            pointHoverRadius: 10
-                        }]
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => data[items[0].dataIndex].songName,
+                                label: (context) => {
+                                    const score = data[context.dataIndex];
+                                    return [
+                                        `PP: ${score.pp.toFixed(2)}`,
+                                        `Accuracy: ${score.acc.toFixed(2)}%`,
+                                        `Stars: ${score.stars.toFixed(2)}⭐`,
+                                        `Difficulty: ${score.difficulty}`,
+                                        '',
+                                        '🖱️ Click to view on BeatLeader'
+                                    ];
+                                }
+                            }
+                        }
                     },
-                    options: getScatterOptions()
-                };
-            } else if (currentView === 'bubble') {
-                return {
-                    type: 'bubble',
-                    data: {
-                        datasets: [{
-                            label: 'PP Performance',
-                            data: data.map(d => ({
-                                x: d.index,
-                                y: d.pp,
-                                r: d.stars * 2,
-                                songName: d.songName,
-                                stars: d.stars,
-                                acc: d.acc,
-                                difficulty: d.difficulty,
-                                leaderboardId: d.leaderboardId
-                            })),
-                            backgroundColor: data.map(d => getStarColor(d.stars) + '80'),
-                            borderColor: data.map(d => diffColors[d.difficulty] || '#718096'),
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Play Number', font: { size: 14, weight: 'bold' } }
+                        },
+                        y: {
+                            title: { display: true, text: 'Performance Points', font: { size: 14, weight: 'bold' } }
+                        }
+                    }
+                }
+            });
+
+            setupTimelineBrush(ctx.canvas, timelineChart, data);
+        }
+
+        function createScatterChart(data) {
+            const ctx = document.getElementById('scatterChart').getContext('2d');
+            if (scatterChart) scatterChart.destroy();
+
+            scatterChart = new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'PP vs Accuracy',
+                        data: data.map((d, idx) => ({
+                            x: d.acc,
+                            y: d.pp,
+                            originalIndex: idx,
+                            songName: d.songName,
+                            stars: d.stars,
+                            difficulty: d.difficulty
+                        })),
+                        backgroundColor: data.map((d, idx) => 
+                            selectedIndices.has(idx) ? '#fbbf24' : getStarColor(d.stars)
+                        ),
+                        borderColor: data.map((d, idx) => 
+                            selectedIndices.has(idx) ? '#f59e0b' : diffColors[d.difficulty]
+                        ),
+                        borderWidth: data.map((_, idx) => 
+                            selectedIndices.has(idx) ? 3 : 2
+                        ),
+                        pointRadius: data.map((_, idx) => 
+                            selectedIndices.has(idx) ? 8 : 6
+                        )
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (event, elements) => {
+                        // Click individual points to toggle selection
+                        if (elements.length > 0) {
+                            const idx = elements[0].index;
+                            
+                            if (selectedIndices.has(idx)) {
+                                selectedIndices.delete(idx);
+                            } else {
+                                selectedIndices.add(idx);
+                            }
+                            updateAllCharts();
+                            updateSelectionInfo(data);
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => items[0].raw.songName,
+                                label: (context) => {
+                                    const d = context.raw;
+                                    return [
+                                        `PP: ${d.y.toFixed(2)}`,
+                                        `Accuracy: ${d.x.toFixed(2)}%`,
+                                        `Stars: ${d.stars.toFixed(2)}⭐`,
+                                        `Difficulty: ${d.difficulty}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Accuracy (%)', font: { size: 12, weight: 'bold' } },
+                            min: 60,
+                            max: 100
+                        },
+                        y: {
+                            title: { display: true, text: 'PP', font: { size: 12, weight: 'bold' } }
+                        }
+                    }
+                }
+            });
+
+            setupBrushInteraction(ctx.canvas, scatterChart, data);
+        }
+
+        function createStarChart(data) {
+            const ctx = document.getElementById('starChart').getContext('2d');
+            if (starChart) starChart.destroy();
+
+            const bins = [0, 5, 8, 10, 12, 14, 20];
+            const binLabels = ['0-5', '5-8', '8-10', '10-12', '12-14', '14+'];
+            const binCounts = new Array(bins.length - 1).fill(0);
+            const binSelected = new Array(bins.length - 1).fill(0);
+
+            data.forEach((score, idx) => {
+                for (let i = 0; i < bins.length - 1; i++) {
+                    if (score.stars >= bins[i] && score.stars < bins[i + 1]) {
+                        binCounts[i]++;
+                        if (selectedIndices.has(idx)) binSelected[i]++;
+                        break;
+                    }
+                }
+            });
+
+            starChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: binLabels,
+                    datasets: [
+                        {
+                            label: 'Total',
+                            data: binCounts,
+                            backgroundColor: binLabels.map((_, i) => getStarColor(bins[i] + 1)),
+                            borderColor: '#fff',
                             borderWidth: 2
-                        }]
+                        },
+                        {
+                            label: 'Selected',
+                            data: binSelected,
+                            backgroundColor: '#fbbf24',
+                            borderColor: '#f59e0b',
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top' }
                     },
-                    options: getBubbleOptions()
+                    scales: {
+                        x: { title: { display: true, text: 'Star Range', font: { size: 12, weight: 'bold' } } },
+                        y: { title: { display: true, text: 'Count', font: { size: 12, weight: 'bold' } } }
+                    }
+                }
+            });
+        }
+
+        function setupTimelineBrush(canvas, chart, data) {
+            const parent = canvas.parentElement;
+            
+            // Create brush overlay if it doesn't exist
+            if (!brushOverlay) {
+                brushOverlay = document.createElement('div');
+                brushOverlay.style.position = 'absolute';
+                brushOverlay.style.border = '2px solid #667eea';
+                brushOverlay.style.backgroundColor = 'rgba(102, 126, 234, 0.2)';
+                brushOverlay.style.pointerEvents = 'none';
+                brushOverlay.style.display = 'none';
+                parent.appendChild(brushOverlay);
+            }
+
+            let isTimelineDragging = false;
+            let timelineDragStart = null;
+
+            canvas.addEventListener('mousedown', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Check if clicking near a point (within 10px)
+                const meta = chart.getDatasetMeta(0);
+                let clickedPoint = false;
+                
+                for (let i = 0; i < meta.data.length; i++) {
+                    const element = meta.data[i];
+                    const distance = Math.sqrt(
+                        Math.pow(element.x - x, 2) + Math.pow(element.y - y, 2)
+                    );
+                    if (distance <= 10) {
+                        clickedPoint = true;
+                        break;
+                    }
+                }
+
+                // Only start brushing if not clicking on a point
+                if (!clickedPoint) {
+                    isTimelineDragging = true;
+                    timelineDragStart = { x, y };
+                    e.preventDefault();
+                }
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                if (isTimelineDragging && timelineDragStart) {
+                    const rect = canvas.getBoundingClientRect();
+                    const currentX = e.clientX - rect.left;
+                    
+                    const minX = Math.min(timelineDragStart.x, currentX);
+                    const width = Math.abs(currentX - timelineDragStart.x);
+                    
+                    // Show brush overlay
+                    brushOverlay.style.display = 'block';
+                    brushOverlay.style.left = minX + 'px';
+                    brushOverlay.style.top = '0px';
+                    brushOverlay.style.width = width + 'px';
+                    brushOverlay.style.height = canvas.height + 'px';
+                }
+            });
+
+            canvas.addEventListener('mouseup', (e) => {
+                if (isTimelineDragging && timelineDragStart) {
+                    const rect = canvas.getBoundingClientRect();
+                    const endX = e.clientX - rect.left;
+                    
+                    // Select all points between start and end X positions
+                    const minX = Math.min(timelineDragStart.x, endX);
+                    const maxX = Math.max(timelineDragStart.x, endX);
+                    
+                    selectedIndices.clear();
+                    const meta = chart.getDatasetMeta(0);
+                    
+                    meta.data.forEach((element, idx) => {
+                        if (element.x >= minX && element.x <= maxX) {
+                            selectedIndices.add(idx);
+                        }
+                    });
+
+                    brushOverlay.style.display = 'none';
+                    isTimelineDragging = false;
+                    timelineDragStart = null;
+                    
+                    updateAllCharts();
+                    updateSelectionInfo(data);
+                }
+            });
+
+            canvas.addEventListener('mouseleave', () => {
+                if (isTimelineDragging) {
+                    brushOverlay.style.display = 'none';
+                    isTimelineDragging = false;
+                    timelineDragStart = null;
+                }
+            });
+        }
+
+        function setupBrushInteraction(canvas, chart, data) {
+            // For scatter plot - allow rectangular selection
+            canvas.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                const rect = canvas.getBoundingClientRect();
+                dragStart = {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
                 };
+            });
+
+            canvas.addEventListener('mouseup', (e) => {
+                if (isDragging && dragStart) {
+                    const rect = canvas.getBoundingClientRect();
+                    const dragEnd = {
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top
+                    };
+                    
+                    // Only select if dragged (not just clicked)
+                    const dragDistance = Math.sqrt(
+                        Math.pow(dragEnd.x - dragStart.x, 2) + 
+                        Math.pow(dragEnd.y - dragStart.y, 2)
+                    );
+                    
+                    if (dragDistance > 5) {
+                        selectPointsInRange(chart, dragStart, dragEnd, data);
+                    }
+                    
+                    isDragging = false;
+                    dragStart = null;
+                }
+            });
+        }
+
+        function selectPointsInRange(chart, start, end, data) {
+            const minX = Math.min(start.x, end.x);
+            const maxX = Math.max(start.x, end.x);
+            const minY = Math.min(start.y, end.y);
+            const maxY = Math.max(start.y, end.y);
+
+            selectedIndices.clear();
+
+            chart.data.datasets[0].data.forEach((point, idx) => {
+                const meta = chart.getDatasetMeta(0);
+                const element = meta.data[idx];
+                
+                if (element && element.x >= minX && element.x <= maxX && 
+                    element.y >= minY && element.y <= maxY) {
+                    selectedIndices.add(idx);
+                }
+            });
+
+            updateAllCharts();
+            updateSelectionInfo(data);
+        }
+
+        function handleChartClick(chartType, event, elements, data) {
+            if (elements.length > 0) {
+                const idx = elements[0].index;
+                
+                if (brushMode === 'click') {
+                    if (selectedIndices.has(idx)) {
+                        selectedIndices.delete(idx);
+                    } else {
+                        selectedIndices.add(idx);
+                    }
+                    updateAllCharts();
+                    updateSelectionInfo(data);
+                } else {
+                    // Open in BeatLeader
+                    const score = data[idx];
+                    if (score.leaderboardId) {
+                        window.open(`https://beatleader.com/leaderboard/global/${score.leaderboardId}`, '_blank');
+                    }
+                }
             }
         }
 
-        function getLineOptions(data) {
-            return {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'nearest',
-                    intersect: false
-                },
-                onClick: (event, elements) => {
-                    if (elements.length > 0) {
-                        const idx = elements[0].index;
-                        const score = data[idx];
-                        if (score.leaderboardId) {
-                            window.open(`https://beatleader.com/leaderboard/global/${score.leaderboardId}`, '_blank');
-                        }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: true,
-                        position: 'top'
-                    },
-                    tooltip: {
-                        callbacks: {
-                            title: (items) => {
-                                const idx = items[0].dataIndex;
-                                return data[idx].songName;
-                            },
-                            label: (context) => {
-                                const idx = context.dataIndex;
-                                const score = data[idx];
-                                return [
-                                    `PP: ${score.pp.toFixed(2)}`,
-                                    `Accuracy: ${score.acc.toFixed(2)}%`,
-                                    `Stars: ${score.stars.toFixed(2)}⭐`,
-                                    `Difficulty: ${score.difficulty}`,
-                                    `Date: ${score.date.toLocaleDateString()}`,
-                                    '',
-                                    '🖱️ Click to view on BeatLeader'
-                                ];
-                            }
-                        }
-                    },
-                    zoom: {
-                        pan: {
-                            enabled: true,
-                            mode: 'xy'
-                        },
-                        zoom: {
-                            wheel: {
-                                enabled: true
-                            },
-                            pinch: {
-                                enabled: true
-                            },
-                            mode: 'xy'
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Play Number',
-                            font: { size: 14, weight: 'bold' }
-                        },
-                        grid: { color: 'rgba(0, 0, 0, 0.05)' }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Performance Points',
-                            font: { size: 14, weight: 'bold' }
-                        },
-                        grid: { color: 'rgba(0, 0, 0, 0.05)' }
-                    }
-                }
-            };
+        function updateSelectionInfo(data) {
+            const selectionInfo = document.getElementById('selectionInfo');
+            const selectionText = document.getElementById('selectionText');
+            
+            if (selectedIndices.size > 0) {
+                const selectedData = data.filter((_, idx) => selectedIndices.has(idx));
+                const avgPP = (selectedData.reduce((sum, d) => sum + d.pp, 0) / selectedData.length).toFixed(1);
+                const avgAcc = (selectedData.reduce((sum, d) => sum + d.acc, 0) / selectedData.length).toFixed(1);
+                
+                selectionText.textContent = `${selectedIndices.size} plays selected | Avg PP: ${avgPP} | Avg Acc: ${avgAcc}%`;
+                selectionInfo.classList.add('show');
+            } else {
+                selectionInfo.classList.remove('show');
+            }
         }
 
-        function getScatterOptions() {
-            return {
-                responsive: true,
-                maintainAspectRatio: false,
-                onClick: (event, elements) => {
-                    if (elements.length > 0) {
-                        const idx = elements[0].index;
-                        const filteredData = filterData();
-                        const score = filteredData[idx];
-                        if (score.leaderboardId) {
-                            window.open(`https://beatleader.com/leaderboard/global/${score.leaderboardId}`, '_blank');
-                        }
-                    }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            title: (items) => items[0].raw.songName,
-                            label: (context) => {
-                                const d = context.raw;
-                                return [
-                                    `PP: ${d.y.toFixed(2)}`,
-                                    `Accuracy: ${d.x.toFixed(2)}%`,
-                                    `Stars: ${d.stars.toFixed(2)}⭐`,
-                                    `Difficulty: ${d.difficulty}`,
-                                    '',
-                                    '🖱️ Click to view on BeatLeader'
-                                ];
-                            }
-                        }
-                    },
-                    zoom: {
-                        pan: { enabled: true, mode: 'xy' },
-                        zoom: {
-                            wheel: { enabled: true },
-                            pinch: { enabled: true },
-                            mode: 'xy'
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        title: { display: true, text: 'Accuracy (%)', font: { size: 14, weight: 'bold' } },
-                        min: 60,
-                        max: 100
-                    },
-                    y: {
-                        title: { display: true, text: 'Performance Points', font: { size: 14, weight: 'bold' } }
-                    }
-                }
-            };
+        function updateAllCharts() {
+            const data = filterData();
+            updateStats(data);
+            createTimelineChart(data);
+            createScatterChart(data);
+            createStarChart(data);
         }
 
-        function getBubbleOptions() {
-            return {
-                responsive: true,
-                maintainAspectRatio: false,
-                onClick: (event, elements) => {
-                    if (elements.length > 0) {
-                        const idx = elements[0].index;
-                        const filteredData = filterData();
-                        const score = filteredData[idx];
-                        if (score.leaderboardId) {
-                            window.open(`https://beatleader.com/leaderboard/global/${score.leaderboardId}`, '_blank');
-                        }
-                    }
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            title: (items) => items[0].raw.songName,
-                            label: (context) => {
-                                const d = context.raw;
-                                return [
-                                    `PP: ${d.y.toFixed(2)}`,
-                                    `Accuracy: ${d.acc.toFixed(2)}%`,
-                                    `Stars: ${d.stars.toFixed(2)}⭐`,
-                                    `Difficulty: ${d.difficulty}`,
-                                    `Play #${d.x}`,
-                                    '',
-                                    '🖱️ Click to view on BeatLeader'
-                                ];
-                            }
-                        }
-                    },
-                    zoom: {
-                        pan: { enabled: true, mode: 'xy' },
-                        zoom: {
-                            wheel: { enabled: true },
-                            pinch: { enabled: true },
-                            mode: 'xy'
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        title: { display: true, text: 'Play Number', font: { size: 14, weight: 'bold' } }
-                    },
-                    y: {
-                        title: { display: true, text: 'Performance Points', font: { size: 14, weight: 'bold' } }
-                    }
-                }
-            };
-        }
-
-        function updateChart() {
-            createChart();
+        function clearSelection() {
+            selectedIndices.clear();
+            updateAllCharts();
+            document.getElementById('selectionInfo').classList.remove('show');
         }
 
         function updateStarRange() {
@@ -743,23 +877,9 @@
                 document.getElementById('maxStar').value = minVal;
                 document.getElementById('maxStarValue').textContent = minVal;
             }
-            updateChart();
+            updateAllCharts();
         }
 
-        function updatePPRange() {
-            const minVal = document.getElementById('minPP').value;
-            document.getElementById('minPPValue').textContent = minVal;
-            updateChart();
-        }
-
-        function changeView(view) {
-            currentView = view;
-            document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            createChart();
-        }
-
-        // Load data on page load
         loadData();
     </script>
 </body>
