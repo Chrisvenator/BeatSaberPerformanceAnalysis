@@ -82,6 +82,7 @@
             height: 550px;
             margin: 0 auto 20px auto;
             max-width: 80%;
+            cursor: pointer;
         }
 
         .stars-loading {
@@ -280,7 +281,8 @@
                     position: index + 1, // 1-based position
                     songName: score.songName,
                     diff: score.diff,
-                    mapper: score.mapper
+                    mapper: score.mapper,
+                    leaderboardId: score.leaderboardId // Store leaderboard ID for linking
                 }));
 
                 document.getElementById('starsLoading').style.display = 'none';
@@ -320,7 +322,8 @@
                 y: d.acc,
                 weightedPP: d.weightedPP,
                 songName: d.songName,
-                diff: d.diff
+                diff: d.diff,
+                leaderboardId: d.leaderboardId
             }));
 
             // Calculate polynomial fit for average line (13th degree)
@@ -399,6 +402,23 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const element = elements[0];
+                            const datasetIndex = element.datasetIndex;
+                            const dataIndex = element.index;
+                            const dataset = chart.data.datasets[datasetIndex];
+                            
+                            // Only handle clicks on scatter plot points (Map Score dataset)
+                            if (dataset.label === 'Map Score') {
+                                const point = dataset.data[dataIndex];
+                                if (point.leaderboardId) {
+                                    const url = `https://beatleader.com/leaderboard/global/${point.leaderboardId}`;
+                                    window.open(url, '_blank');
+                                }
+                            }
+                        }
+                    },
                     plugins: {
                         legend: {
                             display: true,
@@ -419,7 +439,9 @@
                                             `Stars: ${d.x.toFixed(2)}⭐`,
                                             `Accuracy: ${d.y.toFixed(2)}%`,
                                             `Weighted PP: ${d.weightedPP.toFixed(2)}`,
-                                            `Difficulty: ${d.diff}`
+                                            `Difficulty: ${d.diff}`,
+                                            '',
+                                            '🖱️ Click to view on BeatLeader'
                                         ];
                                     }
                                     return `${context.parsed.y.toFixed(2)}%`;
