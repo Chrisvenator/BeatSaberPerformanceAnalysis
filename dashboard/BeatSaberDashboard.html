@@ -26,8 +26,8 @@
 
         /* Header with Background */
         .header {
-            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)), 
-                        url('https://cdn.assets.beatleader.com/cover-76561198274713084R13.webp');
+            background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.7)),
+            url('https://cdn.assets.beatleader.com/cover-76561198274713084R13.webp');
             background-size: cover;
             background-position: center;
             border-radius: 16px;
@@ -264,7 +264,7 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .chart-placeholder iframe {
             width: 100%;
             height: 100%;
@@ -285,8 +285,12 @@
         }
 
         @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
+            0% {
+                left: -100%;
+            }
+            100% {
+                left: 100%;
+            }
         }
 
         /* Scores Table */
@@ -445,204 +449,227 @@
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-content">
-                <div class="player-info">
-                    <img src="https://cdn.assets.beatleader.com/76561198274713084.png" alt="Avatar" class="avatar">
-                    <div class="player-details">
-                        <h1>Chrisvenator</h1>
-                        <p>🇦🇹 Austria • Steam Platform</p>
-                        <div class="clan-tags">
-                            <span class="clan-tag" style="background-color: #fff700; color: #000;">GER</span>
-                            <span class="clan-tag" style="background-color: #f00000; color: #fff;">AUT</span>
-                        </div>
-                        <div class="social-links">
-                            <a href="https://steamcommunity.com/id/Chrisvenator/" class="social-link" target="_blank" title="Steam">
-                                <i class="fab fa-steam"></i>
-                            </a>
-                            <a href="https://www.youtube.com/channel/UCO7fGJ1X4NHXr4i0KSkeumw" class="social-link" target="_blank" title="YouTube">
-                                <i class="fab fa-youtube"></i>
-                            </a>
-                            <a href="https://www.twitch.tv/chrisvenator" class="social-link" target="_blank" title="Twitch">
-                                <i class="fab fa-twitch"></i>
-                            </a>
-                            <a href="https://discordapp.com/users/356008307493961729" class="social-link" target="_blank" title="Discord">
-                                <i class="fab fa-discord"></i>
-                            </a>
-                            <a href="https://beatsaver.com/profile/82944" class="social-link" target="_blank" title="BeatSaver">
-                                <i class="fas fa-music"></i>
-                            </a>
-                        </div>
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="player-info">
+                <img src="https://cdn.assets.beatleader.com/76561198274713084.png" alt="Avatar" class="avatar">
+                <div class="player-details">
+                    <h1>Chrisvenator</h1>
+                    <p>🇦🇹 Austria • Steam Platform</p>
+                    <div class="clan-tags">
+                        <span class="clan-tag" style="background-color: #fff700; color: #000;">GER</span>
+                        <span class="clan-tag" style="background-color: #f00000; color: #fff;">AUT</span>
                     </div>
-                </div>
-                <div class="stats-quick">
-                    <div class="stat-item">
-                        <div class="stat-value">10,293</div>
-                        <div class="stat-label">Performance Points</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">#4,220</div>
-                        <div class="stat-label">Global Rank</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">#25</div>
-                        <div class="stat-label">Country Rank</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">96.6%</div>
-                        <div class="stat-label">Weighted Acc</div>
+                    <div class="social-links">
+                        <a href="https://steamcommunity.com/id/Chrisvenator/" class="social-link" target="_blank"
+                           title="Steam">
+                            <i class="fab fa-steam"></i>
+                        </a>
+                        <a href="https://www.youtube.com/channel/UCO7fGJ1X4NHXr4i0KSkeumw" class="social-link"
+                           target="_blank" title="YouTube">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                        <a href="https://www.twitch.tv/chrisvenator" class="social-link" target="_blank" title="Twitch">
+                            <i class="fab fa-twitch"></i>
+                        </a>
+                        <a href="https://discordapp.com/users/356008307493961729" class="social-link" target="_blank"
+                           title="Discord">
+                            <i class="fab fa-discord"></i>
+                        </a>
+                        <a href="https://beatsaver.com/profile/82944" class="social-link" target="_blank"
+                           title="BeatSaver">
+                            <i class="fas fa-music"></i>
+                        </a>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Key Stats Cards -->
-        <div class="grid-container">
-            <div class="stat-cards">
-                <div class="stat-card">
-                    <div class="stat-card-value">946</div>
-                    <div class="stat-card-label">Total Plays</div>
-                    <div class="stat-card-change">455 Ranked • 491 Unranked</div>
+            <div class="stats-quick">
+                <div class="stat-item">
+                    <div class="stat-value">10,293</div>
+                    <div class="stat-label">Performance Points</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-card-value">672h</div>
-                    <div class="stat-card-label">Play Time</div>
-                    <div class="stat-card-change">40,320 minutes logged</div>
+                <div class="stat-item">
+                    <div class="stat-value">#4,220</div>
+                    <div class="stat-label">Global Rank</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-card-value">405.4</div>
-                    <div class="stat-card-label">Top PP</div>
-                    <div class="stat-card-change">Venomous Firefly</div>
+                <div class="stat-item">
+                    <div class="stat-value">#25</div>
+                    <div class="stat-label">Country Rank</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-card-value">#846</div>
-                    <div class="stat-card-label">Peak Rank</div>
-                    <div class="stat-card-change">Top 3.3% Global</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Visualization Area with Tabs -->
-        <div class="grid-container">
-            <div class="card visualization-area">
-                <div class="viz-tabs">
-                    <button class="viz-tab active" data-viz="rank-history">Player Performance</button>
-                    <button class="viz-tab" data-viz="pp-breakdown">PP Breakdown</button>
-                    <button class="viz-tab" data-viz="pp-progression">PP Progression</button>
-                    <button class="viz-tab" data-viz="acc-distribution">Acc Distribution</button>
-                </div>
-
-                <div class="viz-content active" id="rank-history">
-                    <iframe
-                        src="player-performance.html"
-                        style="width: 100%; height: 1000px; border: none; border-radius: 12px; background: white;"
-                        title="PP Progression Chart">
-                    </iframe>
-                </div>
-
-                <div class="viz-content" id="pp-breakdown">
-                    <iframe
-                        src="pp-breakdown.html"
-                        style="width: 100%; height: 1000px; border: none; border-radius: 12px; background: white;"
-                        title="PP Progression Chart">
-                    </iframe>
-                </div>
-
-                <div class="viz-content" id="pp-progression">
-                    <iframe
-                        src="pp-progression.html"
-                        style="width: 100%; height: 1000px; border: none; border-radius: 12px; background: white;"
-                        title="PP Progression Chart">
-                    </iframe>
-                </div>
-
-                <div class="viz-content" id="acc-distribution">
-                    <iframe
-                        src="acc-distribution.html"
-                        style="width: 100%; height: 1000px; border: none; border-radius: 12px; background: white;"
-                        title="PP Progression Chart">
-                    </iframe>
-                </div>
-            </div>
-        </div>
-
-        <!-- Top Scores Table -->
-        <div class="grid-container">
-            <div class="card scores-table">
-                <div class="card-header">
-                    <div>
-                        <div class="card-title">Top Ranked Scores</div>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table id="scoresTable">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Song</th>
-                                <th>Difficulty</th>
-                                <th>Stars</th>
-                                <th>PP</th>
-                                <th>Accuracy</th>
-                                <th>Score</th>
-                                <th>Combo</th>
-                            </tr>
-                        </thead>
-                        <tbody id="scoresBody">
-                            <tr>
-                                <td colspan="8" style="text-align: center; padding: 40px;">Loading scores...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="stat-item">
+                    <div class="stat-value">96.6%</div>
+                    <div class="stat-label">Weighted Acc</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // Tab switching functionality
-        const tabs = document.querySelectorAll('.viz-tab');
-        const contents = document.querySelectorAll('.viz-content');
+    <!-- Key Stats Cards -->
+    <div class="grid-container">
+        <div class="stat-cards">
+            <div class="stat-card">
+                <div class="stat-card-value">946</div>
+                <div class="stat-card-label">Total Plays</div>
+                <div class="stat-card-change">455 Ranked • 491 Unranked</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-value">672h</div>
+                <div class="stat-card-label">Play Time</div>
+                <div class="stat-card-change">40,320 minutes logged</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-value">405.4</div>
+                <div class="stat-card-label">Top PP</div>
+                <div class="stat-card-change">Venomous Firefly</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-value">#846</div>
+                <div class="stat-card-label">Peak Rank</div>
+                <div class="stat-card-change">Top 3.3% Global</div>
+            </div>
+        </div>
+    </div>
 
-        tabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                const targetViz = tab.getAttribute('data-viz');
-                
-                tabs.forEach(t => t.classList.remove('active'));
-                contents.forEach(c => c.classList.remove('active'));
-                
-                tab.classList.add('active');
-                document.getElementById(targetViz).classList.add('active');
-            });
+    <!-- Visualization Area with Tabs -->
+    <div class="grid-container">
+        <div class="card visualization-area">
+            <div class="viz-tabs">
+                <button class="viz-tab active" data-viz="rank-history">Player Performance</button>
+                <button class="viz-tab" data-viz="pp-breakdown">PP Breakdown</button>
+                <button class="viz-tab" data-viz="pp-progression">PP Progression</button>
+                <button class="viz-tab" data-viz="acc-distribution">Acc Distribution</button>
+            </div>
+
+            <div class="viz-content active" id="rank-history">
+                <iframe
+                        src="player-performance.html"
+                        style="width: 100%; height: 1000px; border: none; border-radius: 12px; background: white;"
+                        title="PP Progression Chart">
+                </iframe>
+            </div>
+
+            <div class="viz-content" id="pp-breakdown">
+                <iframe
+                        src="pp-breakdown.html"
+                        style="width: 100%; height: 1000px; border: none; border-radius: 12px; background: white;"
+                        title="PP Progression Chart">
+                </iframe>
+            </div>
+
+            <div class="viz-content" id="pp-progression">
+                <iframe
+                        src="pp-progression.html"
+                        style="width: 100%; height: 1000px; border: none; border-radius: 12px; background: white;"
+                        title="PP Progression Chart">
+                </iframe>
+            </div>
+
+            <div class="viz-content" id="acc-distribution">
+                <iframe
+                        src="acc-distribution.html"
+                        style="width: 100%; height: 1000px; border: none; border-radius: 12px; background: white;"
+                        title="PP Progression Chart">
+                </iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Scores Table -->
+    <div class="grid-container">
+        <div class="card scores-table">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Top Ranked Scores</div>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="scoresTable">
+                    <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Song</th>
+                        <th>Difficulty</th>
+                        <th>Stars</th>
+                        <th>PP</th>
+                        <th>Accuracy</th>
+                        <th>Score</th>
+                        <th>Combo</th>
+                    </tr>
+                    </thead>
+                    <tbody id="scoresBody">
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px;">Loading scores...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab switching functionality
+    const tabs = document.querySelectorAll('.viz-tab');
+    const contents = document.querySelectorAll('.viz-content');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetViz = tab.getAttribute('data-viz');
+
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+
+            tab.classList.add('active');
+            document.getElementById(targetViz).classList.add('active');
         });
+    });
 
-        // Fetch and display top scores
-        async function loadTopScores() {
+    // Fetch and display top scores
+    async function loadTopScores() {
+        try {
+            // Try multiple CORS proxy methods
+            let data;
+            const apiUrl = 'https://api.beatleader.xyz/player/76561198274713084/scores?sortBy=pp&order=desc&type=ranked&count=10';
+
             try {
-                // Using CORS proxy to bypass CORS restrictions
-                const apiUrl = 'https://api.beatleader.xyz/player/76561198274713084/scores?sortBy=pp&order=desc&type=ranked&count=10';
-                const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(apiUrl);
-                const response = await fetch(proxyUrl);
-                const data = await response.json();
-                
-                const tbody = document.getElementById('scoresBody');
-                tbody.innerHTML = '';
-                
-                data.data.forEach((score, index) => {
-                    const row = document.createElement('tr');
-                    
-                    const diffName = score.leaderboard.difficulty.difficultyName;
-                    let diffClass = 'diff-expert';
-                    if (diffName === 'ExpertPlus') diffClass = 'diff-expertplus';
-                    else if (diffName === 'Hard') diffClass = 'diff-hard';
-                    
-                    const accClass = score.accuracy >= 0.95 ? 'acc-high' : score.accuracy >= 0.90 ? 'acc-mid' : '';
-                    const fcIndicator = score.fullCombo ? ' <span style="color: #48bb78;">FC</span>' : '';
-                    const misses = score.missedNotes > 0 ? ` (${score.missedNotes} miss)` : '';
-                    
-                    row.innerHTML = `
+                // Method 1: Try direct fetch first
+                const response = await fetch(apiUrl);
+                data = await response.json();
+            } catch (directError) {
+                console.log('Direct API failed, trying proxy...');
+
+                try {
+                    // Method 2: Try allorigins.win with get endpoint
+                    const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(apiUrl);
+                    const response = await fetch(proxyUrl);
+                    const proxyData = await response.json();
+                    data = JSON.parse(proxyData.contents);
+                } catch (proxyError) {
+                    // Method 3: Try cors-anywhere alternative
+                    const corsProxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(apiUrl);
+                    const response = await fetch(corsProxyUrl);
+                    data = await response.json();
+                }
+            }
+
+            const tbody = document.getElementById('scoresBody');
+            tbody.innerHTML = '';
+
+            data.data.forEach((score, index) => {
+                const row = document.createElement('tr');
+
+                const diffName = score.leaderboard.difficulty.difficultyName;
+                let diffClass = 'diff-expert';
+                if (diffName === 'ExpertPlus') diffClass = 'diff-expertplus';
+                else if (diffName === 'Hard') diffClass = 'diff-hard';
+
+                const accClass = score.accuracy >= 0.95 ? 'acc-high' : score.accuracy >= 0.90 ? 'acc-mid' : '';
+                const fcIndicator = score.fullCombo ? ' <span style="color: #48bb78;">FC</span>' : '';
+                const misses = score.missedNotes > 0 ? ` (${score.missedNotes} miss)` : '';
+
+                row.innerHTML = `
                         <td><strong>#${score.rank}</strong></td>
                         <td>
                             <div class="song-info">
@@ -664,23 +691,23 @@
                         <td>${score.baseScore.toLocaleString()}</td>
                         <td>${score.maxCombo}x</td>
                     `;
-                    
-                    tbody.appendChild(row);
-                });
-            } catch (error) {
-                console.error('Error loading scores:', error);
-                document.getElementById('scoresBody').innerHTML = `
+
+                tbody.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error loading scores:', error);
+            document.getElementById('scoresBody').innerHTML = `
                     <tr>
                         <td colspan="8" style="text-align: center; padding: 40px; color: #e53e3e;">
                             Failed to load scores. Please try again later.
                         </td>
                     </tr>
                 `;
-            }
         }
+    }
 
-        // Load scores on page load
-        loadTopScores();
-    </script>
+    // Load scores on page load
+    loadTopScores();
+</script>
 </body>
 </html>
