@@ -226,29 +226,25 @@
             }
         }
 
-        function setupControls() {
-            const diffs = [...new Set(allData.map(d => d.diff))].sort((a, b) => 
-                diffOrder.indexOf(a) - diffOrder.indexOf(b)
-            );
-            
-            const controls = document.getElementById('controls');
-            diffs.forEach(diff => {
-                const btn = document.createElement('button');
-                btn.className = 'filter-btn';
-                btn.setAttribute('data-filter', diff);
-                btn.textContent = diff === 'ExpertPlus' ? 'Expert+' : diff;
-                btn.onclick = () => setFilter(diff);
-                controls.appendChild(btn);
-            });
-
-            const debugBtn = document.createElement('button');
-            debugBtn.className = 'filter-btn';
-            debugBtn.textContent = '🐛 Debug';
-            debugBtn.onclick = () => {
-                document.getElementById('debugSection').classList.toggle('show');
-            };
-            controls.appendChild(debugBtn);
-        }
+	function setupControls() {
+	    const diffs = [...new Set(allData.map(d => d.diff))].sort((a, b) => 
+		diffOrder.indexOf(a) - diffOrder.indexOf(b)
+	    );
+	    
+	    const controls = document.getElementById('controls');
+	    
+	    // Add onclick to the existing "All Difficulties" button
+	    controls.querySelector('[data-filter="all"]').onclick = () => setFilter('all');
+	    
+	    diffs.forEach(diff => {
+		const btn = document.createElement('button');
+		btn.className = 'filter-btn';
+		btn.setAttribute('data-filter', diff);
+		btn.textContent = diff === 'ExpertPlus' ? 'Expert+' : diff;
+		btn.onclick = () => setFilter(diff);
+		controls.appendChild(btn);
+	    });
+	}
 
         function setFilter(filter) {
             currentFilter = filter;
